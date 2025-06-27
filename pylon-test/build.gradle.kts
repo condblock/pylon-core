@@ -13,6 +13,7 @@ version = "TEST"
 repositories {
     mavenCentral()
     maven("https://repo.xenondevs.xyz/releases")
+    maven("https://maven.evokegames.gg/snapshots")
 }
 
 dependencies {
