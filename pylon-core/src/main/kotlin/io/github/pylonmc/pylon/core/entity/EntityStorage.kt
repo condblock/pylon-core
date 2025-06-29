@@ -138,8 +138,8 @@ object EntityStorage : Listener {
 
             entityAutosaveTasks[entity.uuid] = PylonCore.launch(PylonCore.minecraftDispatcher) {
                 while (true) {
-                    lockEntityRead {
-                        entity.write(entity.entity.persistentDataContainer)
+                    lockEntityWrite {
+                        entity.save()
                     }
                     delay(PylonConfig.entityDataAutosaveIntervalSeconds * 1000)
                 }
