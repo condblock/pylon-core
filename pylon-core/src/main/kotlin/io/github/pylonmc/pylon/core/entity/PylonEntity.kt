@@ -4,11 +4,11 @@ import io.github.pylonmc.pylon.core.registry.PylonRegistry
 import org.bukkit.Keyed
 import org.bukkit.Location
 import org.bukkit.NamespacedKey
-import org.bukkit.entity.Entity
+import org.bukkit.entity.EntityType
 import org.jetbrains.annotations.ApiStatus
 import java.util.UUID
 
-sealed interface PylonEntity<E : Entity> : Keyed {
+sealed interface PylonEntity : Keyed {
 
     val uuid: UUID
 
@@ -25,8 +25,13 @@ sealed interface PylonEntity<E : Entity> : Keyed {
     companion object {
 
         @JvmStatic
-        fun register(key: NamespacedKey, entityClass: Class<*>, pylonEntityClass: Class<out PylonEntity<*>>) {
-            PylonRegistry.ENTITIES.register(PylonEntitySchema(key, entityClass, pylonEntityClass))
+        fun register(key: NamespacedKey, entityClass: Class<*>, pylonEntityClass: Class<out RealPylonEntity<*>>) {
+            PylonRegistry.ENTITIES.register(PylonEntitySchema.Real(key, entityClass, pylonEntityClass))
+        }
+
+        @JvmStatic
+        fun register(key: NamespacedKey, type: EntityType, pylonEntityClass: Class<out PacketPylonEntity>) {
+            PylonRegistry.ENTITIES.register(PylonEntitySchema.Packet(key, type, pylonEntityClass))
         }
     }
 }

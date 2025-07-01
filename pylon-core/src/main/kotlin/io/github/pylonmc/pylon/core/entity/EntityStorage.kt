@@ -10,12 +10,16 @@ import io.github.pylonmc.pylon.core.event.PylonEntityLoadEvent
 import io.github.pylonmc.pylon.core.event.PylonEntityUnloadEvent
 import io.github.pylonmc.pylon.core.registry.PylonRegistry
 import io.github.pylonmc.pylon.core.util.isFromAddon
+import io.github.pylonmc.pylon.core.util.position.ChunkPosition
+import io.github.pylonmc.pylon.core.util.position.position
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import org.bukkit.Location
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Entity
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.world.ChunkLoadEvent
 import org.bukkit.event.world.EntitiesLoadEvent
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -26,12 +30,13 @@ import kotlin.random.Random
 
 object EntityStorage : Listener {
 
-    private val entities: MutableMap<UUID, PylonEntity<*>> = ConcurrentHashMap()
-    private val entitiesByKey: MutableMap<NamespacedKey, MutableSet<PylonEntity<*>>> = ConcurrentHashMap()
+    private val entities: MutableMap<UUID, PylonEntity> = ConcurrentHashMap()
+    private val entitiesByKey: MutableMap<NamespacedKey, MutableSet<PylonEntity>> = ConcurrentHashMap()
     private val entityAutosaveTasks: MutableMap<UUID, Job> = ConcurrentHashMap()
-    private val whenEntityLoadsTasks: MutableMap<UUID, MutableSet<Consumer<PylonEntity<*>>>> = ConcurrentHashMap()
+    private val whenEntityLoadsTasks: MutableMap<UUID, MutableSet<Consumer<PylonEntity>>> = ConcurrentHashMap()
+    private val packetEntities: MutableMap<ChunkPosition, MutableSet<PacketPylonEntity>> = ConcurrentHashMap()
 
-    val loadedEntities: Collection<PylonEntity<*>>
+    val loadedEntities: Collection<PylonEntity>
         get() = entities.values
 
     // Access to entities, entitiesById fields must be synchronized to prevent them
@@ -39,10 +44,10 @@ object EntityStorage : Listener {
     private val entityLock = ReentrantReadWriteLock()
 
     @JvmStatic
-    fun get(uuid: UUID): PylonEntity<*>? = lockEntityRead { entities[uuid] }
+    fun get(uuid: UUID): PylonEntity? = lockEntityRead { entities[uuid] }
 
     @JvmStatic
-    fun get(entity: Entity): PylonEntity<*>? = get(entity.uniqueId)
+    fun get(entity: Entity): PylonEntity? = get(entity.uniqueId)
 
     @JvmStatic
     fun <T> getAs(clazz: Class<T>, uuid: UUID): T? {
@@ -61,7 +66,7 @@ object EntityStorage : Listener {
     inline fun <reified T> getAs(entity: Entity): T? = getAs(T::class.java, entity)
 
     @JvmStatic
-    fun getByKey(key: NamespacedKey): Collection<PylonEntity<*>> =
+    fun getByKey(key: NamespacedKey): Collection<PylonEntity> =
         if (key in PylonRegistry.ENTITIES) {
             lockEntityRead {
                 entitiesByKey[key].orEmpty()
@@ -75,7 +80,7 @@ object EntityStorage : Listener {
      * if the entity is already loaded
      */
     @JvmStatic
-    fun whenEntityLoads(uuid: UUID, consumer: Consumer<PylonEntity<*>>) {
+    fun whenEntityLoads(uuid: UUID, consumer: Consumer<PylonEntity>) {
         val pylonEntity = get(uuid)
         if (pylonEntity != null) {
             consumer.accept(pylonEntity)
@@ -92,7 +97,7 @@ object EntityStorage : Listener {
      * if the entity is already loaded
      */
     @JvmStatic
-    fun <T : PylonEntity<*>> whenEntityLoads(uuid: UUID, clazz: Class<T>, consumer: Consumer<T>) {
+    fun <T : PylonEntity> whenEntityLoads(uuid: UUID, clazz: Class<T>, consumer: Consumer<T>) {
         val pylonEntity = getAs(clazz, uuid)
         if (pylonEntity != null) {
             consumer.accept(pylonEntity)
@@ -111,7 +116,7 @@ object EntityStorage : Listener {
      * if the entity is already loaded
      */
     @JvmStatic
-    inline fun <reified T : PylonEntity<*>> whenEntityLoads(uuid: UUID, noinline consumer: (T) -> Unit) =
+    inline fun <reified T : PylonEntity> whenEntityLoads(uuid: UUID, noinline consumer: (T) -> Unit) =
         whenEntityLoads(uuid, T::class.java, consumer)
 
     @JvmStatic
@@ -121,9 +126,13 @@ object EntityStorage : Listener {
     fun isPylonEntity(entity: Entity): Boolean = get(entity) != null
 
     @JvmStatic
-    fun <E : Entity> add(entity: PylonEntity<E>): PylonEntity<E> = lockEntityWrite {
+    fun add(entity: PylonEntity): PylonEntity = lockEntityWrite {
         entities[entity.uuid] = entity
         entitiesByKey.getOrPut(entity.schema.key, ::mutableSetOf).add(entity)
+
+        if (entity is PacketPylonEntity) {
+            packetEntities.getOrPut(entity.location.chunk.position, ::mutableSetOf).add(entity)
+        }
 
         // autosaving
         entityAutosaveTasks[entity.uuid] = PylonCore.launch {
@@ -141,25 +150,54 @@ object EntityStorage : Listener {
         entity
     }
 
+    @JvmSynthetic
+    internal fun remove(entity: PylonEntity) = lockEntityWrite {
+        if (entities.remove(entity.uuid) != null) {
+            entitiesByKey[entity.schema.key]!!.remove(entity)
+            if (entitiesByKey[entity.schema.key]!!.isEmpty()) {
+                entitiesByKey.remove(entity.schema.key)
+            }
+            entityAutosaveTasks.remove(entity.uuid)?.cancel()
+            if (entity is PacketPylonEntity) {
+                packetEntities[entity.location.chunk.position]?.remove(entity)
+            }
+        }
+    }
+
+    @JvmSynthetic
+    internal fun movePacketEntity(entity: PacketPylonEntity, oldLocation: Location, newLocation: Location) {
+        val oldChunk = oldLocation.chunk.position
+        val newChunk = newLocation.chunk.position
+        if (oldChunk == newChunk) return
+        lockEntityWrite {
+            packetEntities[oldChunk]?.remove(entity)
+            packetEntities.getOrPut(newChunk, ::mutableSetOf).add(entity)
+        }
+    }
+
+    private fun loadEntity(entity: PylonEntity) {
+        add(entity)
+
+        val tasks = whenEntityLoadsTasks[entity.uuid]
+        if (tasks != null) {
+            for (task in tasks) {
+                try {
+                    task.accept(entity)
+                } catch (t: Throwable) {
+                    t.printStackTrace()
+                }
+            }
+            whenEntityLoadsTasks.remove(entity.uuid)
+        }
+
+        PylonEntityLoadEvent(entity).callEvent()
+    }
+
     @EventHandler
     private fun onEntityLoad(event: EntitiesLoadEvent) {
         for (entity in event.entities) {
             val pylonEntity = RealPylonEntity.deserialize(entity) ?: continue
-            add(pylonEntity)
-
-            val tasks = whenEntityLoadsTasks[pylonEntity.uuid]
-            if (tasks != null) {
-                for (task in tasks) {
-                    try {
-                        task.accept(pylonEntity)
-                    } catch (t: Throwable) {
-                        t.printStackTrace()
-                    }
-                }
-                whenEntityLoadsTasks.remove(pylonEntity.uuid)
-            }
-
-            PylonEntityLoadEvent(pylonEntity).callEvent()
+            loadEntity(pylonEntity)
         }
     }
 
@@ -176,14 +214,35 @@ object EntityStorage : Listener {
             PylonEntityDeathEvent(pylonEntity, event).callEvent()
         }
 
-        lockEntityWrite {
-            entities.remove(pylonEntity.uuid)
-            entitiesByKey[pylonEntity.schema.key]!!.remove(pylonEntity)
-            if (entitiesByKey[pylonEntity.schema.key]!!.isEmpty()) {
-                entitiesByKey.remove(pylonEntity.schema.key)
-            }
-            entityAutosaveTasks.remove(pylonEntity.uuid)?.cancel()
+        remove(pylonEntity)
+    }
+
+    @EventHandler
+    private fun onChunkLoad(event: ChunkLoadEvent) {
+        val entities = event.chunk.persistentDataContainer.get(
+            PacketPylonEntity.packetEntitiesKey,
+            PacketPylonEntity.packetEntitiesType
+        ) ?: return
+
+        for ((uuid, entity) in entities) {
+            if (get(uuid) != null) continue // Already loaded
+            loadEntity(entity)
         }
+        packetEntities[event.chunk.position] = entities.values.toMutableSet()
+    }
+
+    @EventHandler
+    private fun onChunkUnload(event: ChunkLoadEvent) {
+        val entities = packetEntities.remove(event.chunk.position) ?: return
+        for (entity in entities) {
+            PylonEntityUnloadEvent(entity).callEvent()
+            remove(entity)
+        }
+        event.chunk.persistentDataContainer.set(
+            PacketPylonEntity.packetEntitiesKey,
+            PacketPylonEntity.packetEntitiesType,
+            entities.associateBy { it.uuid }
+        )
     }
 
     @JvmSynthetic

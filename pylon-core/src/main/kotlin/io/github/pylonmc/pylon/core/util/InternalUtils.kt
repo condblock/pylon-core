@@ -26,7 +26,7 @@ internal fun Class<*>.findConstructorMatching(vararg types: Class<*>): MethodHan
 
 // I can never remember which way around `isAssignableFrom` goes,
 // so this is a helper function to make it more readable
-private fun Class<*>.isSubclassOf(other: Class<*>): Boolean {
+fun Class<*>.isSubclassOf(other: Class<*>): Boolean {
     return other.isAssignableFrom(this)
 }
 

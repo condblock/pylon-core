@@ -25,7 +25,7 @@ import java.util.UUID
  */
 interface PylonEntityHolderBlock : PylonBreakHandler {
 
-    fun createEntities(context: BlockCreateContext): Map<String, PylonEntity<*>> = emptyMap()
+    fun createEntities(context: BlockCreateContext): Map<String, PylonEntity> = emptyMap()
 
     @get:ApiStatus.NonExtendable
     val heldEntities: MutableMap<String, UUID>
@@ -35,12 +35,11 @@ interface PylonEntityHolderBlock : PylonBreakHandler {
     fun getHeldEntityUuid(name: String) = heldEntities[name] ?: throw IllegalArgumentException("Entity $name not found")
 
     @ApiStatus.NonExtendable
-    fun getHeldEntity(name: String): PylonEntity<*>?
-        = EntityStorage.get(getHeldEntityUuid(name))
+    fun getHeldEntity(name: String): PylonEntity? = EntityStorage.get(getHeldEntityUuid(name))
 
     @ApiStatus.NonExtendable
-    fun <T: PylonEntity<*>> getHeldEntity(clazz: Class<T>, name: String): T?
-        = EntityStorage.getAs(clazz, getHeldEntityUuid(name))
+    fun <T : PylonEntity> getHeldEntity(clazz: Class<T>, name: String): T? =
+        EntityStorage.getAs(clazz, getHeldEntityUuid(name))
 
     /**
      * Returns false if the entity is unloaded or does not physically exist.
@@ -89,7 +88,8 @@ interface PylonEntityHolderBlock : PylonBreakHandler {
         private fun onDeserialize(event: PylonBlockDeserializeEvent) {
             val block = event.pylonBlock
             if (block !is PylonEntityHolderBlock) return
-            holders[block] = event.pdc.get(entityKey, entityType)?.toMutableMap() ?: error("Held entities not found for ${block.key}")
+            holders[block] = event.pdc.get(entityKey, entityType)?.toMutableMap()
+                ?: error("Held entities not found for ${block.key}")
         }
 
         @EventHandler

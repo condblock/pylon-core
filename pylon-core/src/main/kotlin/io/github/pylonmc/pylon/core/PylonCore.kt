@@ -1,6 +1,7 @@
 package io.github.pylonmc.pylon.core
 
 import co.aikar.commands.PaperCommandManager
+import com.github.retrooper.packetevents.PacketEvents
 import io.github.pylonmc.pylon.core.addon.PylonAddon
 import io.github.pylonmc.pylon.core.addon.PylonAddonListener
 import io.github.pylonmc.pylon.core.block.*
@@ -19,6 +20,10 @@ import io.github.pylonmc.pylon.core.item.PylonItemListener
 import io.github.pylonmc.pylon.core.item.research.Research
 import io.github.pylonmc.pylon.core.mobdrop.MobDropListener
 import io.github.pylonmc.pylon.core.registry.PylonRegistry
+import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder
+import me.tofaa.entitylib.APIConfig
+import me.tofaa.entitylib.EntityLib
+import me.tofaa.entitylib.spigot.SpigotEntityLibPlatform
 import org.bukkit.Bukkit
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.BlockDisplay
@@ -26,12 +31,30 @@ import org.bukkit.plugin.java.JavaPlugin
 import xyz.xenondevs.invui.InvUI
 import java.util.Locale
 
+
 object PylonCore : JavaPlugin(), PylonAddon {
 
     private lateinit var manager: PaperCommandManager
 
+    val packetEvents = SpigotPacketEventsBuilder.build(this)
+
+    override fun onLoad() {
+        PacketEvents.setAPI(packetEvents)
+        packetEvents.load()
+    }
+
     override fun onEnable() {
+        packetEvents.init()
         InvUI.getInstance().setPlugin(this)
+
+        val platform = SpigotEntityLibPlatform(this)
+        val settings = APIConfig(PacketEvents.getAPI())
+            .debugMode()
+            .tickTickables()
+            .trackPlatformEntities()
+            .usePlatformLogger()
+
+        EntityLib.init(platform, settings)
 
         saveDefaultConfig()
 
@@ -83,6 +106,7 @@ object PylonCore : JavaPlugin(), PylonAddon {
     override fun onDisable() {
         BlockStorage.cleanupEverything()
         EntityStorage.cleanupEverything()
+        packetEvents.terminate()
     }
 
     private fun addRegistryCompletion(name: String, registry: PylonRegistry<*>) {

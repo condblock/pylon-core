@@ -13,11 +13,11 @@ import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 import org.bukkit.persistence.PersistentDataContainer
 
-abstract class RealPylonEntity<E: Entity>(val entity: E) : PylonEntity<E> {
+abstract class RealPylonEntity<E: Entity>(val entity: E) : PylonEntity {
 
     private val key = entity.persistentDataContainer.get(pylonEntityKeyKey, PylonSerializers.NAMESPACED_KEY)
         ?: throw IllegalStateException("Entity did not have a Pylon key; did you mean to call PylonEntity(NamespacedKey, Entity) instead of PylonEntity(Entity)?")
-    override val uuid = entity.uniqueId
+    final override val uuid = entity.uniqueId
 
     final override var location: Location
         get() = entity.location
@@ -56,7 +56,7 @@ abstract class RealPylonEntity<E: Entity>(val entity: E) : PylonEntity<E> {
         }
 
         @JvmSynthetic
-        internal fun deserialize(entity: Entity): PylonEntity<*>? {
+        internal fun deserialize(entity: Entity): PylonEntity? {
             // Stored outside of the try block so it is displayed in error messages once acquired
             var key: NamespacedKey? = null
 
@@ -66,7 +66,7 @@ abstract class RealPylonEntity<E: Entity>(val entity: E) : PylonEntity<E> {
 
                 // We fail silently here because this may trigger if an addon is removed or fails to load.
                 // In this case, we don't want to delete the data, and we also don't want to spam errors.
-                val schema = PylonRegistry.ENTITIES[key]
+                val schema = PylonRegistry.ENTITIES[key] as? PylonEntitySchema.Real
                     ?: return null
 
                 if (!schema.entityClass.isInstance(entity)) {
@@ -74,7 +74,7 @@ abstract class RealPylonEntity<E: Entity>(val entity: E) : PylonEntity<E> {
                 }
 
                 @Suppress("UNCHECKED_CAST") // The cast will work - this is checked in the schema constructor
-                return schema.loadConstructor.invoke(entity) as PylonEntity<*>
+                return schema.loadConstructor.invoke(entity) as PylonEntity
 
             } catch (t: Throwable) {
                 PylonCore.logger.severe("Error while loading entity $key with UUID ${entity.uniqueId}")
