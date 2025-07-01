@@ -4,6 +4,7 @@ import io.github.pylonmc.pylon.core.PylonCore
 import io.github.pylonmc.pylon.core.block.PylonBlock
 import io.github.pylonmc.pylon.core.block.context.BlockCreateContext
 import io.github.pylonmc.pylon.core.config.Config
+import io.github.pylonmc.pylon.core.config.PylonConfig
 import io.github.pylonmc.pylon.core.config.Settings
 import io.github.pylonmc.pylon.core.datatypes.PylonSerializers
 import io.github.pylonmc.pylon.core.i18n.AddonTranslator
@@ -24,6 +25,7 @@ open class PylonItem(val stack: ItemStack) : Keyed {
     val researchBypassPermission = schema.researchBypassPermission
     val addon = schema.addon
     val pylonBlock = schema.pylonBlockKey
+    val isDisabled: Boolean = PylonConfig.disabledItems.contains(key)
 
     fun getSettings() = Settings.get(key)
 
@@ -39,9 +41,9 @@ open class PylonItem(val stack: ItemStack) : Keyed {
 
     companion object {
 
-        private val nameAndLoreWarningsSupressed: MutableSet<NamespacedKey> = mutableSetOf()
+        private val nameWarningsSupressed: MutableSet<NamespacedKey> = mutableSetOf()
 
-        private fun checkNameAndLore(schema: PylonItemSchema) {
+        private fun checkName(schema: PylonItemSchema) {
             val translator = AddonTranslator.translators[schema.addon]
             check(translator != null) {
                 "Addon does not have a translator; did you forget to call registerWithPylon()?"
@@ -49,20 +51,14 @@ open class PylonItem(val stack: ItemStack) : Keyed {
 
             // Adventure is a perfect API with absolutely no problems whatsoever.
             val name = schema.itemStack.getData(DataComponentTypes.ITEM_NAME) as? TranslatableComponent
-            val lore = schema.itemStack.getData(DataComponentTypes.LORE)?.lines()?.get(0) as? TranslatableComponent
 
-            var isNameAndLoreValid = true
+            var isNameValid = true
             if (name == null || name.key() != ItemStackBuilder.nameKey(schema.key)) {
                 PylonCore.logger.warning("Item ${schema.key}'s name is not a translation key; check your item uses ItemStackBuilder.pylonItem(...)")
-                isNameAndLoreValid = false
+                isNameValid = false
             }
 
-            if (lore == null || lore.key() != ItemStackBuilder.loreKey(schema.key)) {
-                PylonCore.logger.warning("Item ${schema.key}'s lore is not a translation key; check your item uses ItemStackBuilder.pylonItem(...)")
-                isNameAndLoreValid = false
-            }
-
-            if (isNameAndLoreValid) {
+            if (isNameValid) {
                 for (locale in schema.addon.languages) {
                     if (!translator.translationKeyExists(name!!.key(), locale)) {
                         PylonCore.logger.warning(
@@ -73,22 +69,13 @@ open class PylonItem(val stack: ItemStack) : Keyed {
                             }"
                         )
                     }
-                    if (!translator.translationKeyExists(lore!!.key(), locale)) {
-                        PylonCore.logger.warning(
-                            "${schema.key.namespace} is missing a lore translation key for item ${schema.key} (locale: ${locale.displayName} | expected translation key: ${
-                                ItemStackBuilder.loreKey(
-                                    schema.key
-                                )
-                            }"
-                        )
-                    }
                 }
             }
         }
 
         private fun register(schema: PylonItemSchema) {
-            if (schema.key !in nameAndLoreWarningsSupressed) {
-                checkNameAndLore(schema)
+            if (schema.key !in nameWarningsSupressed) {
+                checkName(schema)
             }
             PylonRegistry.ITEMS.register(schema)
         }
@@ -120,8 +107,8 @@ open class PylonItem(val stack: ItemStack) : Keyed {
         }
 
         @JvmStatic
-        fun supressNameAndLoreWarnings(key: NamespacedKey) {
-            nameAndLoreWarningsSupressed.add(key)
+        fun supressNameWarnings(key: NamespacedKey) {
+            nameWarningsSupressed.add(key)
         }
 
         @JvmStatic

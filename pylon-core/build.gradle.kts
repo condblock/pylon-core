@@ -40,6 +40,8 @@ dependencies {
     paperLibraryApi("com.github.Tofaa2.EntityLib:spigot:2.4.11")
     paperLibraryApi("com.github.retrooper:packetevents-spigot:2.8.0")
 
+    implementation("info.debatty:java-string-similarity:2.0.0")
+
     testImplementation(kotlin("test"))
     testImplementation("com.willowtreeapps.assertk:assertk:0.28.1")
     testImplementation("net.kyori:adventure-api:4.20.0")

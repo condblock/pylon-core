@@ -26,7 +26,7 @@ import xyz.xenondevs.invui.item.ItemProvider
 import java.util.function.Consumer
 
 @Suppress("UnstableApiUsage")
-open class ItemStackBuilder private constructor(private val stack: ItemStack) : ItemProvider {
+open class ItemStackBuilder private constructor(val stack: ItemStack) : ItemProvider {
 
     fun amount(amount: Int) = apply {
         stack.amount = amount
@@ -60,6 +60,10 @@ open class ItemStackBuilder private constructor(private val stack: ItemStack) : 
         stack.editPersistentDataContainer(consumer)
     }
 
+    fun <T : Any> editData(type: DataComponentType.Valued<T>, block: (T) -> T) = apply {
+        stack.editData(type, block)
+    }
+
     fun name(name: Component) = set(DataComponentTypes.ITEM_NAME, name)
 
     fun name(name: String) = name(fromMiniMessage(name))
@@ -79,7 +83,7 @@ open class ItemStackBuilder private constructor(private val stack: ItemStack) : 
     fun lore(vararg lore: String) = lore(*lore.map(::fromMiniMessage).toTypedArray())
 
     fun defaultTranslatableLore(key: NamespacedKey) =
-        lore(Component.translatable(loreKey(key)))
+        lore(Component.translatable(loreKey(key), ""))
 
     fun build(): ItemStack = stack.clone()
 

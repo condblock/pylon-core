@@ -14,17 +14,21 @@ import io.github.pylonmc.pylon.core.debug.DebugWaxedWeatheredCutCopperStairs
 import io.github.pylonmc.pylon.core.entity.EntityListener
 import io.github.pylonmc.pylon.core.entity.EntityStorage
 import io.github.pylonmc.pylon.core.entity.PylonEntity
+import io.github.pylonmc.pylon.core.guide.PylonGuide
 import io.github.pylonmc.pylon.core.i18n.AddonTranslator
 import io.github.pylonmc.pylon.core.item.PylonItem
 import io.github.pylonmc.pylon.core.item.PylonItemListener
 import io.github.pylonmc.pylon.core.item.research.Research
 import io.github.pylonmc.pylon.core.mobdrop.MobDropListener
+import io.github.pylonmc.pylon.core.recipe.PylonRecipeListener
+import io.github.pylonmc.pylon.core.recipe.RecipeType
 import io.github.pylonmc.pylon.core.registry.PylonRegistry
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder
 import me.tofaa.entitylib.APIConfig
 import me.tofaa.entitylib.EntityLib
 import me.tofaa.entitylib.spigot.SpigotEntityLibPlatform
 import org.bukkit.Bukkit
+import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.BlockDisplay
 import org.bukkit.plugin.java.JavaPlugin
@@ -73,6 +77,7 @@ object PylonCore : JavaPlugin(), PylonAddon {
         Bukkit.getPluginManager().registerEvents(PylonGuiBlock, this)
         Bukkit.getPluginManager().registerEvents(PylonEntityHolderBlock, this)
         Bukkit.getPluginManager().registerEvents(PylonSimpleMultiblock, this)
+        Bukkit.getPluginManager().registerEvents(PylonRecipeListener, this)
 
         Bukkit.getScheduler().runTaskTimer(
             this,
@@ -95,12 +100,21 @@ object PylonCore : JavaPlugin(), PylonAddon {
         registerWithPylon()
 
         PylonItem.register(DebugWaxedWeatheredCutCopperStairs::class.java, DebugWaxedWeatheredCutCopperStairs.STACK)
+        PylonGuide.hideItem(DebugWaxedWeatheredCutCopperStairs.KEY)
+
         PylonItem.register(PhantomBlock.ErrorItem::class.java, PhantomBlock.ErrorItem.STACK)
+        PylonGuide.hideItem(PhantomBlock.ErrorItem.KEY)
+
+        PylonItem.register(PylonGuide::class.java, PylonGuide.STACK)
+        PylonGuide.hideItem(PylonGuide.KEY)
+
         PylonEntity.register(
             PylonSimpleMultiblock.MultiblockGhostBlock.KEY,
             BlockDisplay::class.java,
             PylonSimpleMultiblock.MultiblockGhostBlock::class.java
         )
+
+        RecipeType.addVanillaRecipes()
     }
 
     override fun onDisable() {
@@ -117,7 +131,7 @@ object PylonCore : JavaPlugin(), PylonAddon {
 
     override val javaPlugin = this
 
-    override val displayName = "Core"
+    override val material = Material.BEDROCK
 
     override val languages: Set<Locale> = setOf(
         Locale.ENGLISH,
