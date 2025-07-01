@@ -6,8 +6,8 @@ import org.bukkit.Keyed
 import org.bukkit.Location
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.EntityType
+import org.bukkit.persistence.PersistentDataContainer
 import java.lang.invoke.MethodHandle
-import java.util.UUID
 
 
 sealed class PylonEntitySchema(private val key: NamespacedKey) : Keyed {
@@ -26,12 +26,20 @@ sealed class PylonEntitySchema(private val key: NamespacedKey) : Keyed {
         val entityType: EntityType,
         @JvmSynthetic internal val pylonEntityClass: Class<out PacketPylonEntity>
     ) : PylonEntitySchema(key) {
-        override val loadConstructor: MethodHandle = pylonEntityClass.findConstructorMatching(
-            UUID::class.java,
+
+        val createConstructor: MethodHandle = pylonEntityClass.findConstructorMatching(
             WrapperEntity::class.java,
+            NamespacedKey::class.java,
             Location::class.java
         ) ?: throw NoSuchMethodException(
-            "Entity '$key' (${pylonEntityClass.simpleName}) is missing a load constructor (UUID, WrapperEntity, Location)"
+            "Entity '$key' (${pylonEntityClass.simpleName}) is missing a create constructor (WrapperEntity, NamespacedKey, Location)"
+        )
+
+        override val loadConstructor: MethodHandle = pylonEntityClass.findConstructorMatching(
+            WrapperEntity::class.java,
+            PersistentDataContainer::class.java
+        ) ?: throw NoSuchMethodException(
+            "Entity '$key' (${pylonEntityClass.simpleName}) is missing a load constructor (WrapperEntity, PersistentDataContainer)"
         )
     }
 

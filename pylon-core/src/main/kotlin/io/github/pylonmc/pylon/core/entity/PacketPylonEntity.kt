@@ -13,11 +13,17 @@ import org.bukkit.persistence.PersistentDataType
 import java.util.UUID
 import com.github.retrooper.packetevents.protocol.world.Location as ProtocolLocation
 
-abstract class PacketPylonEntity(
+open class PacketPylonEntity(
     private val key: NamespacedKey,
     val entity: WrapperEntity,
     location: Location
 ) : PylonEntity {
+
+    constructor(pdc: PersistentDataContainer, entity: WrapperEntity) : this(
+        pdc.get(PDT.keyKey, PylonSerializers.NAMESPACED_KEY)!!,
+        entity,
+        pdc.get(PDT.locationKey, PylonSerializers.LOCATION)!!
+    )
 
     final override val uuid = entity.uuid
 
@@ -27,6 +33,8 @@ abstract class PacketPylonEntity(
             field = value
             entity.teleport(value.toProtocolLocation())
         }
+
+    open fun write(pdc: PersistentDataContainer) {}
 
     final override fun remove() {
         EntityStorage.remove(this)
@@ -51,17 +59,15 @@ abstract class PacketPylonEntity(
         internal val packetEntitiesType = PylonSerializers.MAP.mapTypeFrom(PylonSerializers.UUID, PDT)
 
         @JvmStatic
-        fun <E : PacketPylonEntity> spawn(clazz: Class<E>, location: Location): E {
-            val schema = PylonRegistry.ENTITIES.filterIsInstance<PylonEntitySchema.Packet>()
-                .find { it.pylonEntityClass == clazz }
-                ?: throw IllegalArgumentException("No packet entity schema found for class ${clazz.name}")
+        fun spawn(key: NamespacedKey, location: Location): PacketPylonEntity {
+            val schema = PylonRegistry.ENTITIES[key] as? PylonEntitySchema.Packet
+                ?: throw IllegalArgumentException("No such entity schema registered for key: $key")
 
             val protocolType = EntityTypes.getByName(schema.entityType.key.toString())
             val entity = WrapperEntity(UUID.randomUUID(), protocolType)
             entity.spawn(location.toProtocolLocation())
 
-            @Suppress("UNCHECKED_CAST")
-            val pylonEntity = schema.loadConstructor.invoke(schema.key, entity, location) as E
+            val pylonEntity = schema.createConstructor.invoke(schema.key, entity, location) as PacketPylonEntity
             EntityStorage.add(pylonEntity)
             return pylonEntity
         }
@@ -69,10 +75,10 @@ abstract class PacketPylonEntity(
 
     private object PDT : PersistentDataType<PersistentDataContainer, PacketPylonEntity> {
 
-        private val keyKey = pylonKey("key")
-        private val uuidKey = pylonKey("uuid")
-        private val locationKey = pylonKey("location")
-        private val entityTypeKey = pylonKey("entity_type")
+        val keyKey = pylonKey("key")
+        val uuidKey = pylonKey("uuid")
+        val locationKey = pylonKey("location")
+        val entityTypeKey = pylonKey("entity_type")
 
         override fun getPrimitiveType(): Class<PersistentDataContainer> = PersistentDataContainer::class.java
         override fun getComplexType(): Class<PacketPylonEntity> = PacketPylonEntity::class.java
@@ -99,8 +105,9 @@ abstract class PacketPylonEntity(
             val entityType = primitive.get(entityTypeKey, PylonSerializers.STRING)!!
 
             val wrapper = WrapperEntity(uuid, EntityTypes.getByName(entityType))
+            wrapper.spawn(location.toProtocolLocation())
             val schema = PylonRegistry.ENTITIES[key] as PylonEntitySchema.Packet
-            return schema.loadConstructor.invoke(key, wrapper, location) as PacketPylonEntity
+            return schema.loadConstructor.invoke(wrapper, primitive) as PacketPylonEntity
         }
     }
 }
