@@ -12,14 +12,8 @@ plugins {
 }
 
 repositories {
-    maven("https://repo.xenondevs.xyz/releases") {
-        name = "InvUI"
-    }
     maven("https://repo.aikar.co/content/groups/aikar/") {
         name = "Aikar"
-    }
-    maven(url = "https://maven.evokegames.gg/snapshots") {
-        name = "EntityLib"
     }
 }
 
@@ -42,7 +36,9 @@ dependencies {
     // see https://github.com/NichtStudioCode/InvUI/blob/main/inventoryaccess/inventory-access/src/main/java/xyz/xenondevs/inventoryaccess/version/InventoryAccessRevision.java
     paperLibrary("xyz.xenondevs.invui:inventory-access-r22:1.45:remapped-mojang")
     paperLibraryApi("xyz.xenondevs.invui:invui-kotlin:1.45")
-    paperLibraryApi("me.tofaa.entitylib:spigot:+1f4aeef-SNAPSHOT")
+
+    paperLibraryApi("com.github.Tofaa2.EntityLib:spigot:2.4.11")
+    paperLibraryApi("com.github.retrooper:packetevents-spigot:2.8.0")
 
     testImplementation(kotlin("test"))
     testImplementation("com.willowtreeapps.assertk:assertk:0.28.1")

@@ -6,6 +6,7 @@ import io.github.pylonmc.pylon.core.PylonCore
 import io.github.pylonmc.pylon.core.block.BlockStorage
 import io.github.pylonmc.pylon.core.config.PylonConfig
 import io.github.pylonmc.pylon.core.entity.EntityStorage
+import io.github.pylonmc.pylon.core.entity.RealPylonEntity
 import io.github.pylonmc.pylon.core.util.pylonKey
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -53,8 +54,8 @@ class Waila private constructor(private val player: Player, private val job: Job
     private fun updateDisplay() {
         val entityReach = player.getAttribute(Attribute.ENTITY_INTERACTION_RANGE)?.value ?: 3
         val targetEntity = player.rayTraceEntities(entityReach.toInt())?.hitEntity
-        if (targetEntity != null) {
-            val config = EntityStorage.get(targetEntity)?.getWaila(player)
+        if (targetEntity is RealPylonEntity<*>) {
+            val config = EntityStorage.getAs<RealPylonEntity<*>>(targetEntity)?.getWaila(player)
             if (config != null) {
                 config.apply(bossbar)
                 on()

@@ -7,6 +7,7 @@ import io.github.pylonmc.pylon.core.config.Settings
 import io.github.pylonmc.pylon.core.datatypes.PylonSerializers
 import io.github.pylonmc.pylon.core.registry.PylonRegistry
 import io.github.pylonmc.pylon.core.util.pylonKey
+import org.bukkit.Location
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
@@ -17,6 +18,10 @@ abstract class RealPylonEntity<E: Entity>(val entity: E) : PylonEntity<E> {
     private val key = entity.persistentDataContainer.get(pylonEntityKeyKey, PylonSerializers.NAMESPACED_KEY)
         ?: throw IllegalStateException("Entity did not have a Pylon key; did you mean to call PylonEntity(NamespacedKey, Entity) instead of PylonEntity(Entity)?")
     override val uuid = entity.uniqueId
+
+    final override var location: Location
+        get() = entity.location
+        set(value) { entity.teleport(value) }
 
     constructor(key: NamespacedKey, entity: E): this(initialisePylonEntity<E>(key, entity))
 
@@ -31,6 +36,10 @@ abstract class RealPylonEntity<E: Entity>(val entity: E) : PylonEntity<E> {
     fun getSettings(): Config
             = Settings.get(key)
 
+    final override fun remove() {
+        entity.remove()
+    }
+
     final override fun save() {
         write(entity.persistentDataContainer)
     }
@@ -44,11 +53,6 @@ abstract class RealPylonEntity<E: Entity>(val entity: E) : PylonEntity<E> {
         private fun <E: Entity> initialisePylonEntity(key: NamespacedKey, entity: E): E {
             entity.persistentDataContainer.set(pylonEntityKeyKey, PylonSerializers.NAMESPACED_KEY, key)
             return entity
-        }
-
-        @JvmSynthetic
-        internal fun serialize(pylonEntity: RealPylonEntity<*>) {
-            pylonEntity.write(pylonEntity.entity.persistentDataContainer)
         }
 
         @JvmSynthetic

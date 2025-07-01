@@ -2,6 +2,7 @@ package io.github.pylonmc.pylon.test.test.entity;
 
 import io.github.pylonmc.pylon.core.entity.EntityStorage;
 import io.github.pylonmc.pylon.core.entity.PylonEntity;
+import io.github.pylonmc.pylon.core.entity.RealPylonEntity;
 import io.github.pylonmc.pylon.core.registry.PylonRegistry;
 import io.github.pylonmc.pylon.test.PylonTest;
 import io.github.pylonmc.pylon.test.base.AsyncTest;
@@ -20,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class EntityStorageUnregisteredEntityTest extends AsyncTest {
 
-    public static class UnregisteredEntity extends PylonEntity<LivingEntity> {
+    public static class UnregisteredEntity extends RealPylonEntity<LivingEntity> {
 
         public static final NamespacedKey KEY = PylonTest.key("unregistered_entity");
 

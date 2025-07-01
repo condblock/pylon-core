@@ -4,6 +4,7 @@ import io.github.pylonmc.pylon.core.block.BlockStorage
 import io.github.pylonmc.pylon.core.block.TickManager
 import io.github.pylonmc.pylon.core.block.base.PylonTickingBlock
 import io.github.pylonmc.pylon.core.entity.EntityStorage
+import io.github.pylonmc.pylon.core.entity.RealPylonEntity
 import io.github.pylonmc.pylon.core.event.PylonBlockSerializeEvent
 import io.github.pylonmc.pylon.core.i18n.PylonArgument
 import io.github.pylonmc.pylon.core.item.PylonItem
@@ -61,7 +62,7 @@ class DebugWaxedWeatheredCutCopperStairs(stack: ItemStack)
     }
 
     override fun onUsedToRightClickEntity(event: PlayerInteractEntityEvent) {
-        val pylonEntity = EntityStorage.get(event.rightClicked)
+        val pylonEntity = EntityStorage.getAs<RealPylonEntity<*>>(event.rightClicked)
         val player = event.player
         if (pylonEntity == null) {
             player.sendDebug("not_an_entity")
@@ -86,7 +87,7 @@ class DebugWaxedWeatheredCutCopperStairs(stack: ItemStack)
 //                    }
 //                )
 //            )
-        pylonEntity.write(pylonEntity.entity.persistentDataContainer)
+        pylonEntity.save()
         val serialized = NmsAccessor.instance.serializePdc(pylonEntity.entity.persistentDataContainer)
         player.sendDebug(
             "data",

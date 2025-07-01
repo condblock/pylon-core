@@ -4,7 +4,7 @@ import io.github.pylonmc.pylon.core.block.BlockStorage
 import io.github.pylonmc.pylon.core.block.PylonBlock
 import io.github.pylonmc.pylon.core.datatypes.PylonSerializers
 import io.github.pylonmc.pylon.core.entity.EntityStorage
-import io.github.pylonmc.pylon.core.entity.PylonEntity
+import io.github.pylonmc.pylon.core.entity.RealPylonEntity
 import io.github.pylonmc.pylon.core.entity.base.PylonInteractableEntity
 import io.github.pylonmc.pylon.core.entity.display.BlockDisplayBuilder
 import io.github.pylonmc.pylon.core.entity.display.transform.TransformBuilder
@@ -35,7 +35,7 @@ interface PylonSimpleMultiblock : PylonMultiblock, PylonEntityHolderBlock {
     }
 
     class MultiblockGhostBlock(entity: BlockDisplay, val name: String)
-        : PylonEntity<BlockDisplay>(KEY, entity), PylonInteractableEntity {
+        : RealPylonEntity<BlockDisplay>(KEY, entity), PylonInteractableEntity {
 
         constructor(entity: BlockDisplay)
             : this(entity, entity.persistentDataContainer.get(NAME_KEY, PylonSerializers.STRING)!!)
@@ -112,7 +112,7 @@ interface PylonSimpleMultiblock : PylonMultiblock, PylonEntityHolderBlock {
     fun removeMultiblockGhosts() {
         val toRemove = heldEntities.keys.filter { it.startsWith("multiblock_ghost_block_") }
         for (key in toRemove) {
-            EntityStorage.get(heldEntities[key]!!)!!.entity.remove()
+            EntityStorage.get(heldEntities[key]!!)!!.remove()
             heldEntities.remove(key)
         }
     }
@@ -154,7 +154,7 @@ interface PylonSimpleMultiblock : PylonMultiblock, PylonEntityHolderBlock {
         if (formed) {
             val toRemove = heldEntities.keys.filter { it.startsWith("multiblock_ghost_block_") }
             for (key in toRemove) {
-                EntityStorage.get(heldEntities[key]!!)!!.entity.remove()
+                EntityStorage.get(heldEntities[key]!!)!!.remove()
                 heldEntities.remove(key)
             }
         }

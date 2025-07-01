@@ -13,5 +13,14 @@ allprojects {
         maven("https://repo.papermc.io/repository/maven-public/") {
             name = "papermc"
         }
+        maven("https://repo.xenondevs.xyz/releases") {
+            name = "InvUI"
+        }
+        maven("https://jitpack.io") {
+            name = "JitPack"
+        }
+        maven("https://repo.codemc.io/repository/maven-releases") {
+            name = "CodeMC"
+        }
     }
 }

@@ -1,7 +1,8 @@
 package io.github.pylonmc.pylon.test.entity;
 
-import io.github.pylonmc.pylon.core.entity.PylonEntity;
+import io.github.pylonmc.pylon.core.entity.RealPylonEntity;
 import io.github.pylonmc.pylon.test.PylonTest;
+import lombok.Getter;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.LivingEntity;
@@ -11,7 +12,8 @@ import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
 
-public class SimpleEntity extends PylonEntity<LivingEntity> {
+@Getter
+public class SimpleEntity extends RealPylonEntity<LivingEntity> {
 
     public static final NamespacedKey KEY = PylonTest.key("simple_entity");
     private static final NamespacedKey QUANTITY_KEY = PylonTest.key("some_quantity");
@@ -32,9 +34,5 @@ public class SimpleEntity extends PylonEntity<LivingEntity> {
     @Override
     public void write(@NotNull PersistentDataContainer pdc) {
         pdc.set(QUANTITY_KEY, PersistentDataType.INTEGER, someQuantity);
-    }
-
-    public int getSomeQuantity() {
-        return someQuantity;
     }
 }

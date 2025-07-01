@@ -9,7 +9,7 @@ import java.lang.invoke.MethodHandle
 class PylonEntitySchema(
     private val key: NamespacedKey,
     val entityClass: Class<*>,
-    pylonEntityClass: Class<PylonEntity<*>>,
+    pylonEntityClass: Class<out PylonEntity<*>>,
 ) : Keyed {
 
     @JvmSynthetic

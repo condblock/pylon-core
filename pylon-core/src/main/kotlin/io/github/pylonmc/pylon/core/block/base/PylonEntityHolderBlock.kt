@@ -60,7 +60,7 @@ interface PylonEntityHolderBlock : PylonBreakHandler {
     override fun postBreak() {
         // Best-effort removal; unlikely to cause issues
         for (name in heldEntities.keys) {
-            getHeldEntity(name)?.entity?.remove()
+            getHeldEntity(name)?.remove()
         }
     }
 

@@ -2,7 +2,6 @@ package io.github.pylonmc.pylon.core.entity
 
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent
 import com.github.shynixn.mccoroutine.bukkit.launch
-import com.github.shynixn.mccoroutine.bukkit.minecraftDispatcher
 import io.github.pylonmc.pylon.core.PylonCore
 import io.github.pylonmc.pylon.core.addon.PylonAddon
 import io.github.pylonmc.pylon.core.config.PylonConfig
@@ -40,12 +39,10 @@ object EntityStorage : Listener {
     private val entityLock = ReentrantReadWriteLock()
 
     @JvmStatic
-    fun get(uuid: UUID): PylonEntity<*>?
-        = lockEntityRead { entities[uuid] }
+    fun get(uuid: UUID): PylonEntity<*>? = lockEntityRead { entities[uuid] }
 
     @JvmStatic
-    fun get(entity: Entity): PylonEntity<*>?
-        = get(entity.uniqueId)
+    fun get(entity: Entity): PylonEntity<*>? = get(entity.uniqueId)
 
     @JvmStatic
     fun <T> getAs(clazz: Class<T>, uuid: UUID): T? {
@@ -57,14 +54,11 @@ object EntityStorage : Listener {
     }
 
     @JvmStatic
-    fun <T> getAs(clazz: Class<T>, entity: Entity): T?
-        = getAs(clazz, entity.uniqueId)
+    fun <T> getAs(clazz: Class<T>, entity: Entity): T? = getAs(clazz, entity.uniqueId)
 
-    inline fun <reified T> getAs(uuid: UUID): T?
-        = getAs(T::class.java, uuid)
+    inline fun <reified T> getAs(uuid: UUID): T? = getAs(T::class.java, uuid)
 
-    inline fun <reified T> getAs(entity: Entity): T?
-        = getAs(T::class.java, entity)
+    inline fun <reified T> getAs(entity: Entity): T? = getAs(T::class.java, entity)
 
     @JvmStatic
     fun getByKey(key: NamespacedKey): Collection<PylonEntity<*>> =
@@ -98,13 +92,16 @@ object EntityStorage : Listener {
      * if the entity is already loaded
      */
     @JvmStatic
-    fun <T: PylonEntity<*>> whenEntityLoads(uuid: UUID, clazz: Class<T>, consumer: Consumer<T>) {
+    fun <T : PylonEntity<*>> whenEntityLoads(uuid: UUID, clazz: Class<T>, consumer: Consumer<T>) {
         val pylonEntity = getAs(clazz, uuid)
         if (pylonEntity != null) {
             consumer.accept(pylonEntity)
         } else {
             whenEntityLoadsTasks.getOrPut(uuid) { mutableSetOf() }.add {
-                consumer.accept(getAs(clazz, uuid) ?: throw IllegalStateException("Entity $uuid was not of expected type ${clazz.simpleName}"))
+                consumer.accept(
+                    getAs(clazz, uuid)
+                        ?: throw IllegalStateException("Entity $uuid was not of expected type ${clazz.simpleName}")
+                )
             }
         }
     }
@@ -114,16 +111,14 @@ object EntityStorage : Listener {
      * if the entity is already loaded
      */
     @JvmStatic
-    inline fun <reified T: PylonEntity<*>> whenEntityLoads(uuid: UUID, crossinline consumer: (T) -> Unit)
-            = whenEntityLoads(uuid, T::class.java) { t -> consumer(t) }
+    inline fun <reified T : PylonEntity<*>> whenEntityLoads(uuid: UUID, noinline consumer: (T) -> Unit) =
+        whenEntityLoads(uuid, T::class.java, consumer)
 
     @JvmStatic
-    fun isPylonEntity(uuid: UUID): Boolean
-        = get(uuid) != null
+    fun isPylonEntity(uuid: UUID): Boolean = get(uuid) != null
 
     @JvmStatic
-    fun isPylonEntity(entity: Entity): Boolean
-        = get(entity) != null
+    fun isPylonEntity(entity: Entity): Boolean = get(entity) != null
 
     @JvmStatic
     fun <E : Entity> add(entity: PylonEntity<E>): PylonEntity<E> = lockEntityWrite {
@@ -131,18 +126,16 @@ object EntityStorage : Listener {
         entitiesByKey.getOrPut(entity.schema.key, ::mutableSetOf).add(entity)
 
         // autosaving
-        entityAutosaveTasks[entity.uuid] = PylonCore.launch(PylonCore.minecraftDispatcher) {
+        entityAutosaveTasks[entity.uuid] = PylonCore.launch {
 
             // Wait a random delay before starting, this is to help smooth out lag from saving
             delay(Random.nextLong(PylonConfig.entityDataAutosaveIntervalSeconds * 1000))
 
-            entityAutosaveTasks[entity.uuid] = PylonCore.launch(PylonCore.minecraftDispatcher) {
-                while (true) {
-                    lockEntityWrite {
-                        entity.save()
-                    }
-                    delay(PylonConfig.entityDataAutosaveIntervalSeconds * 1000)
+            while (true) {
+                lockEntityWrite {
+                    entity.save()
                 }
+                delay(PylonConfig.entityDataAutosaveIntervalSeconds * 1000)
             }
         }
         entity
@@ -151,7 +144,7 @@ object EntityStorage : Listener {
     @EventHandler
     private fun onEntityLoad(event: EntitiesLoadEvent) {
         for (entity in event.entities) {
-            val pylonEntity = PylonEntity.deserialize(entity) ?: continue
+            val pylonEntity = RealPylonEntity.deserialize(entity) ?: continue
             add(pylonEntity)
 
             val tasks = whenEntityLoadsTasks[pylonEntity.uuid]
@@ -177,7 +170,7 @@ object EntityStorage : Listener {
         val pylonEntity = get(event.entity.uniqueId) ?: return
 
         if (!event.entity.isDead) {
-            PylonEntity.serialize(pylonEntity)
+            pylonEntity.save()
             PylonEntityUnloadEvent(pylonEntity).callEvent()
         } else {
             PylonEntityDeathEvent(pylonEntity, event).callEvent()
@@ -197,7 +190,7 @@ object EntityStorage : Listener {
     internal fun cleanup(addon: PylonAddon) = lockEntityWrite {
         for ((_, value) in entitiesByKey.filter { it.key.isFromAddon(addon) }) {
             for (entity in value) {
-                PylonEntity.serialize(entity)
+                entity.save()
             }
         }
 
@@ -208,7 +201,7 @@ object EntityStorage : Listener {
     @JvmSynthetic
     internal fun cleanupEverything() {
         for (entity in entities.values) {
-            entity.write(entity.entity.persistentDataContainer)
+            entity.save()
         }
     }
 
