@@ -1,5 +1,6 @@
 package io.github.pylonmc.pylon.core.entity.display.transform
 
+import io.github.pylonmc.pylon.core.nms.NmsAccessor
 import org.bukkit.Location
 import org.bukkit.block.BlockFace
 import org.bukkit.util.Transformation
@@ -82,5 +83,12 @@ object TransformUtil {
             .rotate(leftRotation)
             .scale(scale)
             .rotate(rightRotation)
+    }
+
+    @JvmStatic
+    @JvmName("matrixToTransformation")
+    // basically just a wrapper around NMS so that we don't have to expose it
+    fun Matrix4f.toTransformation(): Transformation {
+        return NmsAccessor.instance.decomposeMatrix(this)
     }
 }

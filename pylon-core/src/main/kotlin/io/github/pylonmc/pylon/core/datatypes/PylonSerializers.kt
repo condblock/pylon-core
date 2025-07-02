@@ -6,6 +6,7 @@ import org.bukkit.Material
 import org.bukkit.Registry
 import org.bukkit.block.BlockFace
 import org.bukkit.persistence.PersistentDataType
+import org.joml.Matrix4f
 
 object PylonSerializers {
     @JvmField
@@ -60,6 +61,9 @@ object PylonSerializers {
     val ENUM = EnumPersistentDataType
 
     @JvmField
+    val SERIALIZABLE = SerializablePersistentDataType
+
+    @JvmField
     val NAMESPACED_KEY = NamespacedKeyPersistentDataType
 
     @JvmField
@@ -67,6 +71,9 @@ object PylonSerializers {
 
     @JvmField
     val VECTOR = VectorPersistentDataType
+
+    @JvmField
+    val MATRIX_4F = SERIALIZABLE.serializableTypeFrom<Matrix4f>()
 
     @JvmField
     val WORLD = WorldPersistentDataType

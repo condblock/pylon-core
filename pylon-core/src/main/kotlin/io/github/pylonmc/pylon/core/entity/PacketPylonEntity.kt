@@ -7,22 +7,35 @@ import io.github.pylonmc.pylon.core.util.pylonKey
 import me.tofaa.entitylib.wrapper.WrapperEntity
 import org.bukkit.Location
 import org.bukkit.NamespacedKey
+import org.bukkit.entity.Player
 import org.bukkit.persistence.PersistentDataAdapterContext
 import org.bukkit.persistence.PersistentDataContainer
 import org.bukkit.persistence.PersistentDataType
 import java.util.UUID
 import com.github.retrooper.packetevents.protocol.world.Location as ProtocolLocation
 
-open class PacketPylonEntity(
-    private val key: NamespacedKey,
+/**
+ * Unlike "real" entities, packet entities only persist three things: UUID, location, and type.
+ */
+open class PacketPylonEntity private constructor(
     val entity: WrapperEntity,
-    location: Location
+    private val key: NamespacedKey,
+    location: Location,
+    @Suppress("unused") marker: Nothing? // used to make this constructor different from the secondary
 ) : PylonEntity {
 
-    constructor(pdc: PersistentDataContainer, entity: WrapperEntity) : this(
-        pdc.get(PDT.keyKey, PylonSerializers.NAMESPACED_KEY)!!,
+    constructor(entity: WrapperEntity, key: NamespacedKey, location: Location) : this(
         entity,
-        pdc.get(PDT.locationKey, PylonSerializers.LOCATION)!!
+        key,
+        location,
+        null
+    )
+
+    constructor(entity: WrapperEntity, pdc: PersistentDataContainer) : this(
+        entity,
+        pdc.get(PDT.keyKey, PylonSerializers.NAMESPACED_KEY)!!,
+        pdc.get(PDT.locationKey, PylonSerializers.LOCATION)!!,
+        null
     )
 
     final override val uuid = entity.uuid
@@ -35,6 +48,18 @@ open class PacketPylonEntity(
         }
 
     open fun write(pdc: PersistentDataContainer) {}
+
+    fun addViewers(vararg viewers: Player) {
+        for (viewer in viewers) {
+            entity.addViewer(viewer.uniqueId)
+        }
+    }
+
+    fun removeViewers(vararg viewers: Player) {
+        for (viewer in viewers) {
+            entity.removeViewer(viewer.uniqueId)
+        }
+    }
 
     final override fun remove() {
         EntityStorage.remove(this)
