@@ -2,10 +2,9 @@ package io.github.pylonmc.pylon.core.entity.display
 
 import io.github.pylonmc.pylon.core.datatypes.PylonSerializers
 import io.github.pylonmc.pylon.core.entity.PacketPylonEntity
-import io.github.pylonmc.pylon.core.entity.display.transform.TransformUtil.toTransformation
-import io.github.pylonmc.pylon.core.nms.NmsAccessor
+import io.github.pylonmc.pylon.core.entity.display.builder.transform.TransformUtil.toTransformation
 import io.github.pylonmc.pylon.core.util.pylonKey
-import me.tofaa.entitylib.meta.types.DisplayMeta
+import me.tofaa.entitylib.meta.display.AbstractDisplayMeta
 import me.tofaa.entitylib.wrapper.WrapperEntity
 import org.bukkit.Color
 import org.bukkit.Location
@@ -23,7 +22,7 @@ import org.joml.Vector3f as JomlVector3f
  * In addition to the three things that [PacketPylonEntity] persists,
  * this entity also persists the display transformation
  */
-open class PylonDisplayEntity : PacketPylonEntity {
+sealed class PylonDisplayEntity : PacketPylonEntity {
 
     constructor(entity: WrapperEntity, key: NamespacedKey, location: Location) : super(entity, key, location)
 
@@ -36,7 +35,7 @@ open class PylonDisplayEntity : PacketPylonEntity {
         pdc.set(transformationKey, PylonSerializers.MATRIX_4F, transformation)
     }
 
-    val meta: DisplayMeta = entity.getEntityMeta(DisplayMeta::class.java)
+    abstract val meta: AbstractDisplayMeta
 
     var transformation: Matrix4f
         get() = Matrix4f()
@@ -52,38 +51,43 @@ open class PylonDisplayEntity : PacketPylonEntity {
             meta.rightRotation = transform.rightRotation.toProtocol()
         }
 
-    var interpolationDelay by meta::interpolationDelay
-    var interpolationDuration by meta::transformationInterpolationDuration
-    var teleportDuration by meta::positionRotationInterpolationDuration
+    var interpolationDelay: Int by meta::interpolationDelay
+    var interpolationDuration: Int by meta::transformationInterpolationDuration
+    var teleportDuration: Int by meta::positionRotationInterpolationDuration
 
     var billboard: Display.Billboard
         get() = when (meta.billboardConstraints) {
-            DisplayMeta.BillboardConstraints.FIXED -> Display.Billboard.FIXED
-            DisplayMeta.BillboardConstraints.VERTICAL -> Display.Billboard.VERTICAL
-            DisplayMeta.BillboardConstraints.HORIZONTAL -> Display.Billboard.HORIZONTAL
-            DisplayMeta.BillboardConstraints.CENTER -> Display.Billboard.CENTER
+            AbstractDisplayMeta.BillboardConstraints.FIXED -> Display.Billboard.FIXED
+            AbstractDisplayMeta.BillboardConstraints.VERTICAL -> Display.Billboard.VERTICAL
+            AbstractDisplayMeta.BillboardConstraints.HORIZONTAL -> Display.Billboard.HORIZONTAL
+            AbstractDisplayMeta.BillboardConstraints.CENTER -> Display.Billboard.CENTER
         }
         set(value) {
             meta.billboardConstraints = when (value) {
-                Display.Billboard.FIXED -> DisplayMeta.BillboardConstraints.FIXED
-                Display.Billboard.VERTICAL -> DisplayMeta.BillboardConstraints.VERTICAL
-                Display.Billboard.HORIZONTAL -> DisplayMeta.BillboardConstraints.HORIZONTAL
-                Display.Billboard.CENTER -> DisplayMeta.BillboardConstraints.CENTER
+                Display.Billboard.FIXED -> AbstractDisplayMeta.BillboardConstraints.FIXED
+                Display.Billboard.VERTICAL -> AbstractDisplayMeta.BillboardConstraints.VERTICAL
+                Display.Billboard.HORIZONTAL -> AbstractDisplayMeta.BillboardConstraints.HORIZONTAL
+                Display.Billboard.CENTER -> AbstractDisplayMeta.BillboardConstraints.CENTER
             }
         }
 
     var brightness: Display.Brightness
-        get() = NmsAccessor.instance.unpackBrightness(meta.brightnessOverride)
+        get() {
+            val packed = meta.brightnessOverride
+            val block = packed shr 4 and 0xFFFF
+            val sky = packed shr 20 and 0xFFFF
+            return Display.Brightness(block, sky)
+        }
         set(value) {
-            meta.brightnessOverride = NmsAccessor.instance.packBrightness(value)
+            meta.brightnessOverride = (value.blockLight shl 4) or (value.skyLight shl 20)
         }
 
-    var viewRange by meta::viewRange
-    var shadowRadius by meta::shadowRadius
-    var shadowStrength by meta::shadowStrength
+    var viewRange: Float by meta::viewRange
+    var shadowRadius: Float by meta::shadowRadius
+    var shadowStrength: Float by meta::shadowStrength
 
-    var displayWidth by meta::width
-    var displayHeight by meta::height
+    var displayWidth: Float by meta::width
+    var displayHeight: Float by meta::height
 
     var glowColorOverride: Color
         get() = Color.fromARGB(meta.glowColorOverride)

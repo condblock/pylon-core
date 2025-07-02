@@ -1,4 +1,4 @@
-package io.github.pylonmc.pylon.core.entity.display.transform
+package io.github.pylonmc.pylon.core.entity.display.builder.transform
 
 import io.github.pylonmc.pylon.core.nms.NmsAccessor
 import org.bukkit.Location

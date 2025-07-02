@@ -6,8 +6,8 @@ import io.github.pylonmc.pylon.core.datatypes.PylonSerializers
 import io.github.pylonmc.pylon.core.entity.EntityStorage
 import io.github.pylonmc.pylon.core.entity.RealPylonEntity
 import io.github.pylonmc.pylon.core.entity.base.PylonInteractableEntity
-import io.github.pylonmc.pylon.core.entity.display.BlockDisplayBuilder
-import io.github.pylonmc.pylon.core.entity.display.transform.TransformBuilder
+import io.github.pylonmc.pylon.core.entity.display.builder.BlockDisplayBuilder
+import io.github.pylonmc.pylon.core.entity.display.builder.transform.TransformBuilder
 import io.github.pylonmc.pylon.core.event.PylonBlockPlaceEvent
 import io.github.pylonmc.pylon.core.registry.PylonRegistry
 import io.github.pylonmc.pylon.core.util.position.ChunkPosition

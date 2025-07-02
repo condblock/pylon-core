@@ -3,7 +3,7 @@
 package io.github.pylonmc.pylon.core.util
 
 import io.github.pylonmc.pylon.core.addon.PylonAddon
-import io.github.pylonmc.pylon.core.entity.display.transform.TransformUtil.yawToCardinalDirection
+import io.github.pylonmc.pylon.core.entity.display.builder.transform.TransformUtil.yawToCardinalDirection
 import org.bukkit.NamespacedKey
 import org.bukkit.block.BlockFace
 import org.bukkit.entity.Player

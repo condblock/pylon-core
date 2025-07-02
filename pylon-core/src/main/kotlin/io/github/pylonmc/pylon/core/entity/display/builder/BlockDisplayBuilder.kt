@@ -1,6 +1,6 @@
-package io.github.pylonmc.pylon.core.entity.display
+package io.github.pylonmc.pylon.core.entity.display.builder
 
-import io.github.pylonmc.pylon.core.entity.display.transform.TransformBuilder
+import io.github.pylonmc.pylon.core.entity.display.builder.transform.TransformBuilder
 import org.bukkit.Color
 import org.bukkit.Location
 import org.bukkit.Material

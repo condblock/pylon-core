@@ -1,12 +1,8 @@
-package io.github.pylonmc.pylon.core.entity.display.transform
+package io.github.pylonmc.pylon.core.entity.display.builder.transform
 
-import org.joml.Matrix4f
-import org.joml.Quaterniond
-import org.joml.Quaternionf
-import org.joml.Vector3d
-import org.joml.Vector3f
+import org.joml.*
 
-class Rotation private constructor(
+class RotationBackwards private constructor(
     private val vector: Vector3f?,
     private val quaternion: Quaternionf?
 ) : TransformComponent {
@@ -25,9 +21,9 @@ class Rotation private constructor(
 
     override fun apply(matrix: Matrix4f) {
         if (vector != null) {
-            matrix.mul(Matrix4f().rotateXYZ(vector))
+            matrix.mul(Matrix4f().rotateXYZ(Vector3f(vector).mul(-1.0F)))
         } else if (quaternion != null) {
-            matrix.mul(Matrix4f().rotate(quaternion))
+            matrix.mul(Matrix4f().rotate(Quaternionf(quaternion).invert()))
         } else {
             throw IllegalStateException()
         }

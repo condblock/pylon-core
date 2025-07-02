@@ -1,4 +1,4 @@
-package io.github.pylonmc.pylon.core.entity.display.transform
+package io.github.pylonmc.pylon.core.entity.display.builder.transform
 
 import org.joml.Matrix4f
 

@@ -4,6 +4,7 @@ import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes
 import io.github.pylonmc.pylon.core.datatypes.PylonSerializers
 import io.github.pylonmc.pylon.core.registry.PylonRegistry
 import io.github.pylonmc.pylon.core.util.pylonKey
+import io.github.retrooper.packetevents.util.SpigotConversionUtil
 import me.tofaa.entitylib.wrapper.WrapperEntity
 import org.bukkit.Location
 import org.bukkit.NamespacedKey
@@ -88,7 +89,7 @@ open class PacketPylonEntity private constructor(
             val schema = PylonRegistry.ENTITIES[key] as? PylonEntitySchema.Packet
                 ?: throw IllegalArgumentException("No such entity schema registered for key: $key")
 
-            val protocolType = EntityTypes.getByName(schema.entityType.key.toString())
+            val protocolType = SpigotConversionUtil.fromBukkitEntityType(schema.entityType)
             val entity = WrapperEntity(UUID.randomUUID(), protocolType)
             entity.spawn(location.toProtocolLocation())
 

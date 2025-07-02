@@ -1,4 +1,4 @@
-package io.github.pylonmc.pylon.core.entity.display
+package io.github.pylonmc.pylon.core.entity.display.builder
 
 import org.bukkit.Location
 import org.bukkit.entity.Interaction
