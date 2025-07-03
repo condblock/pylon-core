@@ -38,7 +38,7 @@ public class EntityStorageUnregisteredEntityTest extends AsyncTest {
     @Override
     protected void test() {
         TestUtil.runSync(() -> {
-            PylonEntity.register(UnregisteredEntity.KEY, LivingEntity.class, UnregisteredEntity.class);
+            PylonEntity.registerReal(UnregisteredEntity.KEY, LivingEntity.class, UnregisteredEntity.class);
         });
 
         Chunk chunk = TestUtil.getRandomChunk(false).join();
@@ -68,7 +68,7 @@ public class EntityStorageUnregisteredEntityTest extends AsyncTest {
         TestUtil.unloadChunk(chunk).join();
         TestUtil.waitUntil(() -> !chunk.isEntitiesLoaded()).join();
 
-        PylonEntity.register(UnregisteredEntity.KEY, LivingEntity.class, UnregisteredEntity.class);
+        PylonEntity.registerReal(UnregisteredEntity.KEY, LivingEntity.class, UnregisteredEntity.class);
 
         TestUtil.loadChunk(chunk).join();
         TestUtil.waitUntil(chunk::isEntitiesLoaded).join();

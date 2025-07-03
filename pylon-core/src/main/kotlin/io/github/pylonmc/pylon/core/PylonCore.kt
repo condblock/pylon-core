@@ -108,7 +108,7 @@ object PylonCore : JavaPlugin(), PylonAddon {
         PylonItem.register(PylonGuide::class.java, PylonGuide.STACK)
         PylonGuide.hideItem(PylonGuide.KEY)
 
-        PylonEntity.register(
+        PylonEntity.registerReal(
             PylonSimpleMultiblock.MultiblockGhostBlock.KEY,
             BlockDisplay::class.java,
             PylonSimpleMultiblock.MultiblockGhostBlock::class.java

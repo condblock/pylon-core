@@ -9,6 +9,6 @@ public final class Entities {
     private Entities() {}
 
     public static void register() {
-        PylonEntity.register(SimpleEntity.KEY, LivingEntity.class, SimpleEntity.class);
+        PylonEntity.registerReal(SimpleEntity.KEY, LivingEntity.class, SimpleEntity.class);
     }
 }

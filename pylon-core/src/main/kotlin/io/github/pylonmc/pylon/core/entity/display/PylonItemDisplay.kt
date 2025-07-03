@@ -18,6 +18,8 @@ import org.jetbrains.annotations.MustBeInvokedByOverriders
  */
 open class PylonItemDisplay : PylonDisplayEntity {
 
+    final override val meta: ItemDisplayMeta = entity.getEntityMeta(ItemDisplayMeta::class.java)
+
     constructor(entity: WrapperEntity, key: NamespacedKey, location: Location) : super(entity, key, location)
 
     constructor(entity: WrapperEntity, pdc: PersistentDataContainer) : super(entity, pdc) {
@@ -31,8 +33,6 @@ open class PylonItemDisplay : PylonDisplayEntity {
         pdc.set(itemKey, PylonSerializers.ITEM_STACK, item)
         pdc.set(displayTransformKey, PylonSerializers.ENUM.enumTypeFrom(), displayTransform)
     }
-
-    final override val meta: ItemDisplayMeta = entity.getEntityMeta(ItemDisplayMeta::class.java)
 
     var item: ItemStack
         get() = SpigotConversionUtil.toBukkitItemStack(meta.item)

@@ -13,23 +13,25 @@ import org.bukkit.persistence.PersistentDataContainer
 import org.jetbrains.annotations.MustBeInvokedByOverriders
 
 /**
- * In addition to the things [PylonDisplayEntity] persists, this entity also persists the text
+ * In addition to the things [PylonDisplayEntity] persists, this entity also persists the text and background color
  */
 open class PylonTextDisplay : PylonDisplayEntity {
+
+    final override val meta: TextDisplayMeta = entity.getEntityMeta(TextDisplayMeta::class.java)
 
     constructor(entity: WrapperEntity, key: NamespacedKey, location: Location) : super(entity, key, location)
 
     constructor(entity: WrapperEntity, pdc: PersistentDataContainer) : super(entity, pdc) {
         text = pdc.get(textKey, PylonSerializers.COMPONENT)!!
+        meta.backgroundColor = pdc.get(backgroundColorKey, PylonSerializers.INTEGER)!!
     }
 
     @MustBeInvokedByOverriders
     override fun write(pdc: PersistentDataContainer) {
         super.write(pdc)
         pdc.set(textKey, PylonSerializers.COMPONENT, text)
+        pdc.set(backgroundColorKey, PylonSerializers.INTEGER, meta.backgroundColor)
     }
-
-    final override val meta: TextDisplayMeta = entity.getEntityMeta(TextDisplayMeta::class.java)
 
     var text: Component by meta::text
     var lineWidth: Int by meta::lineWidth
@@ -82,5 +84,6 @@ open class PylonTextDisplay : PylonDisplayEntity {
 
     companion object {
         private val textKey = pylonKey("text")
+        private val backgroundColorKey = pylonKey("background_color")
     }
 }

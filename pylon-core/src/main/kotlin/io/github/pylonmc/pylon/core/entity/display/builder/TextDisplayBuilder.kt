@@ -1,17 +1,19 @@
 package io.github.pylonmc.pylon.core.entity.display.builder
 
+import io.github.pylonmc.pylon.core.entity.PacketPylonEntity
+import io.github.pylonmc.pylon.core.entity.display.PylonTextDisplay
 import io.github.pylonmc.pylon.core.entity.display.builder.transform.TransformBuilder
 import net.kyori.adventure.text.Component
 import org.bukkit.Color
 import org.bukkit.Location
+import org.bukkit.NamespacedKey
 import org.bukkit.entity.Display.Billboard
 import org.bukkit.entity.Display.Brightness
 import org.bukkit.entity.TextDisplay
 import org.bukkit.entity.TextDisplay.TextAlignment
 import org.joml.Matrix4f
 
-
-@Suppress("unused")
+@Suppress("unused", "DuplicatedCode")
 class TextDisplayBuilder() {
 
     private var text: Component? = null
@@ -38,59 +40,76 @@ class TextDisplayBuilder() {
         this.interpolationDuration = other.interpolationDuration
     }
 
-    fun text(text: String): TextDisplayBuilder = apply { this.text = Component.text(text) }
-    fun text(text: Component?): TextDisplayBuilder = apply { this.text = text }
-    fun transformation(transformation: Matrix4f?): TextDisplayBuilder = apply { this.transformation = transformation }
-    fun transformation(builder: TransformBuilder): TextDisplayBuilder = apply { this.transformation = builder.buildForTextDisplay() }
-    fun brightness(brightness: Brightness): TextDisplayBuilder = apply { this.brightness = brightness }
-    fun brightness(brightness: Int): TextDisplayBuilder = brightness(Brightness(0, brightness))
-    fun glow(glowColor: Color?): TextDisplayBuilder = apply { this.glowColor = glowColor }
-    fun viewRange(viewRange: Float): TextDisplayBuilder = apply { this.viewRange = viewRange }
-    fun billboard(billboard: Billboard?): TextDisplayBuilder = apply { this.billboard = billboard }
-    fun alignment(alignment: TextAlignment?): TextDisplayBuilder = apply { this.alignment = alignment }
-    fun backgroundColor(backgroundColor: Color?): TextDisplayBuilder = apply { this.backgroundColor = backgroundColor }
-    fun interpolationDelay(interpolationDelay: Int): TextDisplayBuilder = apply { this.interpolationDelay = interpolationDelay }
-    fun interpolationDuration(interpolationDuration: Int): TextDisplayBuilder = apply { this.interpolationDuration = interpolationDuration }
+    // @formatter:off
+    fun text(text: String) = apply { this.text = Component.text(text) }
+    fun text(text: Component?) = apply { this.text = text }
+    fun transformation(transformation: Matrix4f?) = apply { this.transformation = transformation }
+    fun transformation(builder: TransformBuilder) = apply { this.transformation = builder.buildForTextDisplay() }
+    fun transformLocal(transformation: Matrix4f) = apply { this.transformation = (this.transformation ?: Matrix4f()).mul(transformation) }
+    fun transformLocal(builder: TransformBuilder) = transformLocal(builder.buildForTextDisplay())
+    fun transformToUnitSquare() = apply { this.transformation = squareTransformation }
+    fun brightness(brightness: Brightness) = apply { this.brightness = brightness }
+    fun brightness(brightness: Int) = brightness(Brightness(0, brightness))
+    fun glow(glowColor: Color?) = apply { this.glowColor = glowColor }
+    fun viewRange(viewRange: Float) = apply { this.viewRange = viewRange }
+    fun billboard(billboard: Billboard?) = apply { this.billboard = billboard }
+    fun alignment(alignment: TextAlignment?) = apply { this.alignment = alignment }
+    fun backgroundColor(backgroundColor: Color?) = apply { this.backgroundColor = backgroundColor }
+    fun interpolationDelay(interpolationDelay: Int) = apply { this.interpolationDelay = interpolationDelay }
+    fun interpolationDuration(interpolationDuration: Int) = apply { this.interpolationDuration = interpolationDuration }
+    // @formatter:on
 
-    fun build(location: Location): TextDisplay {
+    fun buildReal(location: Location): TextDisplay {
         val finalLocation = location.clone()
         finalLocation.yaw = 0f
         finalLocation.pitch = 0f
 
-        return finalLocation.world.spawn(finalLocation, TextDisplay::class.java, this::update)
+        return finalLocation.world.spawn(finalLocation, TextDisplay::class.java) { display ->
+            text?.let { display.text(it) }
+            transformation?.let { display.setTransformationMatrix(it) }
+            brightness?.let { display.brightness = it }
+            glowColor?.let {
+                display.isGlowing = true
+                display.glowColorOverride = it
+            }
+            viewRange?.let { display.viewRange = it }
+            billboard?.let { display.billboard = it }
+            alignment?.let { display.alignment = it }
+            backgroundColor?.let { display.backgroundColor = it }
+            interpolationDelay?.let { display.interpolationDelay = it }
+            interpolationDuration?.let { display.interpolationDuration = it }
+        }
     }
 
-    fun update(display: TextDisplay) {
-        if (text != null) {
-            display.text(text)
+    fun buildPacketBased(key: NamespacedKey, location: Location): PylonTextDisplay {
+        val finalLocation = location.clone()
+        finalLocation.yaw = 0f
+        finalLocation.pitch = 0f
+
+        val display = PacketPylonEntity.spawn(key, finalLocation) as PylonTextDisplay
+        text?.let { display.text = it }
+        transformation?.let { display.transformation = it }
+        brightness?.let { display.brightness = it }
+        glowColor?.let {
+            display.meta.isGlowing = true
+            display.glowColorOverride = it
         }
-        if (transformation != null) {
-            display.setTransformationMatrix(transformation!!)
-        }
-        if (brightness != null) {
-            display.brightness = brightness
-        }
-        if (glowColor != null) {
-            display.isGlowing = true
-            display.glowColorOverride = glowColor
-        }
-        if (viewRange != null) {
-            display.viewRange = viewRange!!
-        }
-        if (billboard != null) {
-            display.billboard = billboard!!
-        }
-        if (alignment != null) {
-            display.alignment = alignment!!
-        }
-        if (backgroundColor != null) {
-            display.backgroundColor = backgroundColor
-        }
-        if (interpolationDelay != null) {
-            display.interpolationDelay = interpolationDelay!!
-        }
-        if (interpolationDuration != null) {
-            display.interpolationDuration = interpolationDuration!!
-        }
+        viewRange?.let { display.viewRange = it }
+        billboard?.let { display.billboard = it }
+        alignment?.let { display.alignment = it }
+        backgroundColor?.let { display.backgroundColor = it }
+        interpolationDelay?.let { display.interpolationDelay = it }
+        interpolationDuration?.let { display.interpolationDuration = it }
+
+        return display
+    }
+
+    companion object {
+        @JvmStatic
+        // https://github.com/TheCymaera/minecraft-hologram/blob/d67eb43308df61bdfe7283c6821312cca5f9dea9/src/main/java/com/heledron/hologram/utilities/rendering/textDisplays.kt#L15
+        val squareTransformation: Matrix4f
+            get() = Matrix4f()
+                .translate(-0.1f + .5f, -0.5f + .5f, 0f)
+                .scale(8.0f, 4.0f, 1f)
     }
 }

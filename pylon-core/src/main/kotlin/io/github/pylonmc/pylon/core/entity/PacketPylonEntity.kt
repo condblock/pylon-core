@@ -5,6 +5,8 @@ import io.github.pylonmc.pylon.core.datatypes.PylonSerializers
 import io.github.pylonmc.pylon.core.registry.PylonRegistry
 import io.github.pylonmc.pylon.core.util.pylonKey
 import io.github.retrooper.packetevents.util.SpigotConversionUtil
+import me.tofaa.entitylib.EntityLib
+import me.tofaa.entitylib.spigot.SpigotEntityLibPlatform
 import me.tofaa.entitylib.wrapper.WrapperEntity
 import org.bukkit.Location
 import org.bukkit.NamespacedKey
@@ -93,7 +95,7 @@ open class PacketPylonEntity private constructor(
             val entity = WrapperEntity(UUID.randomUUID(), protocolType)
             entity.spawn(location.toProtocolLocation())
 
-            val pylonEntity = schema.createConstructor.invoke(schema.key, entity, location) as PacketPylonEntity
+            val pylonEntity = schema.createConstructor.invoke(entity, schema.key, location) as PacketPylonEntity
             EntityStorage.add(pylonEntity)
             return pylonEntity
         }
@@ -118,6 +120,7 @@ open class PacketPylonEntity private constructor(
             container.set(uuidKey, PylonSerializers.UUID, complex.uuid)
             container.set(locationKey, PylonSerializers.LOCATION, complex.location)
             container.set(entityTypeKey, PylonSerializers.STRING, complex.entity.entityType.name.toString())
+            complex.write(container)
             return container
         }
 
@@ -130,8 +133,8 @@ open class PacketPylonEntity private constructor(
             val location = primitive.get(locationKey, PylonSerializers.LOCATION)!!
             val entityType = primitive.get(entityTypeKey, PylonSerializers.STRING)!!
 
-            val wrapper = WrapperEntity(uuid, EntityTypes.getByName(entityType))
-            wrapper.spawn(location.toProtocolLocation())
+            val wrapper = EntityLib.getApi<SpigotEntityLibPlatform>().getEntity(uuid)
+                ?: WrapperEntity(uuid, EntityTypes.getByName(entityType)).also { it.spawn(location.toProtocolLocation()) }
             val schema = PylonRegistry.ENTITIES[key] as PylonEntitySchema.Packet
             return schema.loadConstructor.invoke(wrapper, primitive) as PacketPylonEntity
         }

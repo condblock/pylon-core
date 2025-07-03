@@ -19,20 +19,32 @@ import org.joml.Quaternionf as JomlQuaternionf
 import org.joml.Vector3f as JomlVector3f
 
 /**
- * In addition to the three things that [PacketPylonEntity] persists,
- * this entity also persists the display transformation
+ * In addition to the things that [PacketPylonEntity] persists,
+ * this entity also persists the display transformation, brightness, glow color,
+ * width, height, and billboard
  */
 sealed class PylonDisplayEntity : PacketPylonEntity {
 
     constructor(entity: WrapperEntity, key: NamespacedKey, location: Location) : super(entity, key, location)
 
     constructor(entity: WrapperEntity, pdc: PersistentDataContainer) : super(entity, pdc) {
-        transformation = pdc.get(transformationKey, PylonSerializers.MATRIX_4F)!!
+        val meta = entity.getEntityMeta(AbstractDisplayMeta::class.java)
+        meta.applyTransformation(pdc.get(transformationKey, PylonSerializers.MATRIX_4F)!!)
+        meta.brightnessOverride = pdc.get(brightnessKey, PylonSerializers.INTEGER)!!
+        meta.glowColorOverride = pdc.get(glowColorOverrideKey, PylonSerializers.INTEGER)!!
+        meta.width = pdc.get(widthKey, PylonSerializers.FLOAT)!!
+        meta.height = pdc.get(heightKey, PylonSerializers.FLOAT)!!
+        meta.billboardConstraints = pdc.get(billboardKey, PylonSerializers.ENUM.enumTypeFrom())!!
     }
 
     @MustBeInvokedByOverriders
     override fun write(pdc: PersistentDataContainer) {
         pdc.set(transformationKey, PylonSerializers.MATRIX_4F, transformation)
+        pdc.set(brightnessKey, PylonSerializers.INTEGER, meta.brightnessOverride)
+        pdc.set(glowColorOverrideKey, PylonSerializers.INTEGER, meta.glowColorOverride)
+        pdc.set(widthKey, PylonSerializers.FLOAT, meta.width)
+        pdc.set(heightKey, PylonSerializers.FLOAT, meta.height)
+        pdc.set(billboardKey, PylonSerializers.ENUM.enumTypeFrom(), meta.billboardConstraints)
     }
 
     abstract val meta: AbstractDisplayMeta
@@ -44,11 +56,7 @@ sealed class PylonDisplayEntity : PacketPylonEntity {
             .scale(meta.scale.toJoml())
             .rotate(meta.rightRotation.toJoml())
         set(value) {
-            val transform = value.toTransformation()
-            meta.translation = transform.translation.toProtocol()
-            meta.leftRotation = transform.leftRotation.toProtocol()
-            meta.scale = transform.scale.toProtocol()
-            meta.rightRotation = transform.rightRotation.toProtocol()
+            meta.applyTransformation(value)
         }
 
     var interpolationDelay: Int by meta::interpolationDelay
@@ -97,6 +105,11 @@ sealed class PylonDisplayEntity : PacketPylonEntity {
 
     companion object {
         private val transformationKey = pylonKey("transformation")
+        private val brightnessKey = pylonKey("brightness")
+        private val glowColorOverrideKey = pylonKey("glow_color_override")
+        private val widthKey = pylonKey("width")
+        private val heightKey = pylonKey("height")
+        private val billboardKey = pylonKey("billboard")
     }
 }
 
@@ -104,3 +117,11 @@ private fun ProtocolVector3f.toJoml() = JomlVector3f(x, y, z)
 private fun ProtocolQuaternion4f.toJoml() = JomlQuaternionf(x, y, z, w)
 private fun JomlVector3f.toProtocol() = ProtocolVector3f(x, y, z)
 private fun JomlQuaternionf.toProtocol() = ProtocolQuaternion4f(x, y, z, w)
+
+private fun AbstractDisplayMeta.applyTransformation(matrix: Matrix4f) {
+    val transform = matrix.toTransformation()
+    translation = transform.translation.toProtocol()
+    leftRotation = transform.leftRotation.toProtocol()
+    scale = transform.scale.toProtocol()
+    rightRotation = transform.rightRotation.toProtocol()
+}

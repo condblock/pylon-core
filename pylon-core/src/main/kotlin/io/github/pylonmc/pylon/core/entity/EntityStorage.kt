@@ -33,6 +33,7 @@ object EntityStorage : Listener {
     private val entities: MutableMap<UUID, PylonEntity> = ConcurrentHashMap()
     private val entitiesByKey: MutableMap<NamespacedKey, MutableSet<PylonEntity>> = ConcurrentHashMap()
     private val entityAutosaveTasks: MutableMap<UUID, Job> = ConcurrentHashMap()
+    private val chunkAutosaveTasks: MutableMap<ChunkPosition, Job> = ConcurrentHashMap()
     private val whenEntityLoadsTasks: MutableMap<UUID, MutableSet<Consumer<PylonEntity>>> = ConcurrentHashMap()
     private val packetEntities: MutableMap<ChunkPosition, MutableSet<PacketPylonEntity>> = ConcurrentHashMap()
 
@@ -130,21 +131,24 @@ object EntityStorage : Listener {
         entities[entity.uuid] = entity
         entitiesByKey.getOrPut(entity.schema.key, ::mutableSetOf).add(entity)
 
-        if (entity is PacketPylonEntity) {
-            packetEntities.getOrPut(entity.location.chunk.position, ::mutableSetOf).add(entity)
-        }
+        when (entity) {
+            is PacketPylonEntity -> {
+                packetEntities.getOrPut(entity.location.chunk.position, ::mutableSetOf).add(entity)
+            }
 
-        // autosaving
-        entityAutosaveTasks[entity.uuid] = PylonCore.launch {
+            is RealPylonEntity<*> -> {
+                entityAutosaveTasks[entity.uuid] = PylonCore.launch {
 
-            // Wait a random delay before starting, this is to help smooth out lag from saving
-            delay(Random.nextLong(PylonConfig.entityDataAutosaveIntervalSeconds * 1000))
+                    // Wait a random delay before starting, this is to help smooth out lag from saving
+                    delay(Random.nextLong(PylonConfig.entityDataAutosaveIntervalSeconds * 1000))
 
-            while (true) {
-                lockEntityWrite {
-                    entity.save()
+                    while (true) {
+                        lockEntityWrite {
+                            entity.save()
+                        }
+                        delay(PylonConfig.entityDataAutosaveIntervalSeconds * 1000)
+                    }
                 }
-                delay(PylonConfig.entityDataAutosaveIntervalSeconds * 1000)
             }
         }
         entity
@@ -229,6 +233,22 @@ object EntityStorage : Listener {
             loadEntity(entity)
         }
         packetEntities[event.chunk.position] = entities.values.toMutableSet()
+
+        chunkAutosaveTasks[event.chunk.position] = PylonCore.launch {
+            // Wait a random delay before starting, this is to help smooth out lag from saving
+            delay(Random.nextLong(PylonConfig.entityDataAutosaveIntervalSeconds * 1000))
+
+            while (true) {
+                lockEntityWrite {
+                    event.chunk.persistentDataContainer.set(
+                        PacketPylonEntity.packetEntitiesKey,
+                        PacketPylonEntity.packetEntitiesType,
+                        packetEntities[event.chunk.position]?.associateBy { it.uuid } ?: emptyMap()
+                    )
+                }
+                delay(PylonConfig.entityDataAutosaveIntervalSeconds * 1000)
+            }
+        }
     }
 
     @EventHandler
@@ -243,6 +263,7 @@ object EntityStorage : Listener {
             PacketPylonEntity.packetEntitiesType,
             entities.associateBy { it.uuid }
         )
+        chunkAutosaveTasks.remove(event.chunk.position)?.cancel()
     }
 
     @JvmSynthetic

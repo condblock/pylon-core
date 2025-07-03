@@ -17,6 +17,8 @@ import org.jetbrains.annotations.MustBeInvokedByOverriders
  */
 open class PylonBlockDisplay : PylonDisplayEntity {
 
+    final override val meta: BlockDisplayMeta = entity.getEntityMeta(BlockDisplayMeta::class.java)
+
     constructor(entity: WrapperEntity, key: NamespacedKey, location: Location) : super(entity, key, location)
 
     constructor(entity: WrapperEntity, pdc: PersistentDataContainer) : super(entity, pdc) {
@@ -28,8 +30,6 @@ open class PylonBlockDisplay : PylonDisplayEntity {
         super.write(pdc)
         pdc.set(blockKey, PylonSerializers.INTEGER, meta.blockId)
     }
-
-    final override val meta: BlockDisplayMeta = entity.getEntityMeta(BlockDisplayMeta::class.java)
 
     var block: BlockData
         get() = SpigotConversionUtil.toBukkitBlockData(WrappedBlockState.getByGlobalId(meta.blockId))

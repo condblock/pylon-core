@@ -25,12 +25,12 @@ sealed interface PylonEntity : Keyed {
     companion object {
 
         @JvmStatic
-        fun register(key: NamespacedKey, entityClass: Class<*>, pylonEntityClass: Class<out RealPylonEntity<*>>) {
+        fun registerReal(key: NamespacedKey, entityClass: Class<*>, pylonEntityClass: Class<out RealPylonEntity<*>>) {
             PylonRegistry.ENTITIES.register(PylonEntitySchema.Real(key, entityClass, pylonEntityClass))
         }
 
         @JvmStatic
-        fun register(key: NamespacedKey, type: EntityType, pylonEntityClass: Class<out PacketPylonEntity>) {
+        fun registerPacketBased(key: NamespacedKey, type: EntityType, pylonEntityClass: Class<out PacketPylonEntity>) {
             PylonRegistry.ENTITIES.register(PylonEntitySchema.Packet(key, type, pylonEntityClass))
         }
     }

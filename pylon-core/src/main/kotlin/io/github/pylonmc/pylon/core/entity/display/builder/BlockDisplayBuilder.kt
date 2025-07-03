@@ -22,7 +22,7 @@ class BlockDisplayBuilder() {
     private var interpolationDelay: Int? = null
     private var interpolationDuration: Int? = null
 
-    constructor(other: BlockDisplayBuilder): this() {
+    constructor(other: BlockDisplayBuilder) : this() {
         this.material = other.material
         this.blockData = other.blockData
         this.transformation = other.transformation
@@ -38,15 +38,19 @@ class BlockDisplayBuilder() {
         return this
     }
 
-    fun blockData(blockData: BlockData?): BlockDisplayBuilder = apply { this.blockData = blockData }
-    fun transformation(transformation: Matrix4f?): BlockDisplayBuilder = apply { this.transformation = transformation }
-    fun transformation(builder: TransformBuilder): BlockDisplayBuilder = apply { this.transformation = builder.buildForBlockDisplay() }
-    fun brightness(brightness: Brightness): BlockDisplayBuilder = apply { this.brightness = brightness }
-    fun brightness(brightness: Int): BlockDisplayBuilder = brightness(Brightness(0, brightness))
-    fun glow(glowColor: Color?): BlockDisplayBuilder = apply { this.glowColor = glowColor }
-    fun viewRange(viewRange: Float): BlockDisplayBuilder = apply { this.viewRange = viewRange }
-    fun interpolationDelay(interpolationDelay: Int): BlockDisplayBuilder = apply { this.interpolationDelay = interpolationDelay }
-    fun interpolationDuration(interpolationDuration: Int): BlockDisplayBuilder = apply { this.interpolationDuration = interpolationDuration }
+    // @formatter:off
+    fun blockData(blockData: BlockData?) = apply { this.blockData = blockData }
+    fun transformation(transformation: Matrix4f?) = apply { this.transformation = transformation }
+    fun transformation(builder: TransformBuilder) = apply { this.transformation = builder.buildForBlockDisplay() }
+    fun transformLocal(transformation: Matrix4f) = apply { this.transformation = (this.transformation ?: Matrix4f()).mul(transformation) }
+    fun transformLocal(builder: TransformBuilder) = transformLocal(builder.buildForBlockDisplay())
+    fun brightness(brightness: Brightness) = apply { this.brightness = brightness }
+    fun brightness(brightness: Int) = brightness(Brightness(0, brightness))
+    fun glow(glowColor: Color?) = apply { this.glowColor = glowColor }
+    fun viewRange(viewRange: Float) = apply { this.viewRange = viewRange }
+    fun interpolationDelay(interpolationDelay: Int) = apply { this.interpolationDelay = interpolationDelay }
+    fun interpolationDuration(interpolationDuration: Int) = apply { this.interpolationDuration = interpolationDuration }
+    // @formatter:on
 
     fun build(location: Location): BlockDisplay {
         val finalLocation = location.clone()
