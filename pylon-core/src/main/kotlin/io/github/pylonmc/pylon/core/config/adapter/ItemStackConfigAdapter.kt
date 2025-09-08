@@ -1,6 +1,6 @@
 package io.github.pylonmc.pylon.core.config.adapter
 
-import io.github.pylonmc.pylon.core.util.itemFromName
+import io.github.pylonmc.pylon.core.util.itemFromKey
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.inventory.ItemStack
 
@@ -13,11 +13,11 @@ object ItemStackConfigAdapter : ConfigAdapter<ItemStack> {
             is Pair<*, *> -> {
                 val itemKey = ConfigAdapter.STRING.convert(value.first!!)
                 val amount = ConfigAdapter.INT.convert(value.second!!)
-                itemFromName(itemKey)!!.asQuantity(amount)
+                itemFromKey(itemKey)!!.asQuantity(amount)
             }
 
             is ConfigurationSection -> convert(value.getValues(false).toList().single())
-            is String -> itemFromName(value)!!
+            is String -> itemFromKey(value)!!
             else -> throw IllegalArgumentException("Cannot convert $value to ItemStack")
         }
     }

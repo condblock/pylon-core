@@ -124,6 +124,7 @@ object PylonCore : JavaPlugin(), PylonAddon {
     }
 
     private fun postServerStart() {
+        logger.info("Loading recipe configurations...")
         for (type in PylonRegistry.RECIPE_TYPES) {
             if (type !is ConfigurableRecipeType) continue
             for (addon in PylonRegistry.ADDONS) {
@@ -144,6 +145,7 @@ object PylonCore : JavaPlugin(), PylonAddon {
                 }
                 .forEach { (type, config) -> type.loadFromConfig(config) }
         }
+        logger.info("Finished loading recipe configurations")
     }
 
     override fun onDisable() {
