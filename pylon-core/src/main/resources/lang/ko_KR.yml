@@ -1,36 +1,42 @@
-addon: Core
+addon: "Core"
+
 item:
   error_item:
     name: <red>에러
     lore: |-
       <red>로드가 실패된 블록에서 떨어진 아이템입니다.
       <red>오류가 난 블록:</red> <yellow>%block%
+
   guide:
     name: <white>파일런 가이드
     lore: <arrow> <insn>오른쪽 클릭</insn>으로 열기
+
   phantom_block:
     name: <red>팬텀 블록 (%block%)
+
   debug_waxed_weathered_cut_copper_stairs:
     name: <red>디버그 밀랍칠한 녹슨 깎인 구리 계단
     lore: |-
       <arrow> <insn>쉬프트 오른쪽 클릭</insn>으로 블록/엔티티 제거
       <arrow> <insn>오른쪽 클릭</insn>으로 블록/엔티티의 파일런 데이터 확인
+
   fluid_pipe_connector:
     waila: '%pipe%'
+
   fluid_pipe_marker:
     waila: '%pipe%'
+
 fluid:
   temperature:
     display-text: <arrow> <attr>온도:</attr> %temperature%
     cold: <#1cb3d8>차가움
     normal: <#c9d81c>보통
     hot: <#d81c1c>뜨거움
+
 message:
   debug:
     not_a_block: <red>파일런 블록이 아닙니다
     not_an_entity: <red>파일런 엔티티가 아닙니다
-    data: '<gold>데이터: <white>%data%'
-    deleted_data: <white>%type% <gray>(%location%) <red>제거됨
     key:
       block: '<gold>파일런 블록 키: <white>%key%'
       entity: '<gold>파일런 엔티티 키: <white>%key%'
@@ -38,13 +44,18 @@ message:
       ticking: '<gold>Ticking: <green>Yes'
       errored: '<gold>Ticking: <red>Ticker has errored'
       not_ticking: '<gold>Ticking: <red>No'
+    data: '<gold>데이터: <white>%data%'
+    deleted_data: <white>%type% <gray>(%location%) <red>제거됨
+
   disabled:
     message: <white>%item%<red>이(가) 비활성화되었습니다
     lore: <arrow> <#ff0000>비활성화됨 - 조합은 가능하지만 사용할 수 없습니다
+
   research:
     unknown: <red>%item%을(를) 사용하는 방법을 알 수 없습니다. %research%에 대해 연구해 보세요.
     unlocked: <green>%research%에 대한 연구를 마쳤습니다
     click_to_research: <green>클릭해서 연구하기 (%points% 포인트)
+
   command:
     error:
       no_permission: <red>이 명령어를 사용할 권한이 없습니다
@@ -62,14 +73,14 @@ message:
     research:
       added: '%player%에게 연구 %research%을(를) 추가했습니다'
       removed: '%player%에게 연구 %research%을(를) 제거했습니다'
-      already_discovered: <red>이미 %research%에 대한 연구를 마쳤습니다
-      cannot_unlock: <red>연구 포인트로 %research%을(를) 해금할 수 없습니다
-      not_enough_points: <red>%research% 연구를 위한 지식이 모자랍니다 (%points%/%cost% 포인트)
       list:
         none_self: <red>해금한 연구가 없습니다
         none_other: <red>%player%가 해금한 연구가 없습니다
         discovered_self: '%count%개의 연구를 해금하였습니다: %list%'
         discovered_other: '%player%는 %count%개의 연구를 해금하였습니다: %list%'
+      already_discovered: <red>이미 %research%에 대한 연구를 마쳤습니다
+      cannot_unlock: <red>연구 포인트로 %research%을(를) 해금할 수 없습니다
+      not_enough_points: <red>%research% 연구를 위한 지식이 모자랍니다 (%points%/%cost% 포인트)
       points:
         set: '%player%의 연구 포인트를 %points%로 설정하였습니다'
         added: '%player%의 연구 포인트를 %points% 추가했습니다'
@@ -79,26 +90,31 @@ message:
       not-configurable: <red>레시피를 설정할 수 없습니다
       warning: '<yellow>주의: 레시피 구성을 노출하면 자동으로 업데이트되지 않습니다.
         되돌리려면 %file%을 삭제하세요'
+
   guide:
     ingredients-page:
       item: <yellow>%item_ingredients_page_amount%x <white>%item_ingredients_page_item%
+
   waila:
     type-disabled: <red>이 서버는 더 이상 이전에 설정한 %type% WAILA 표시 유형을 
         허용하지 않습니다. 기본값으로 재설정되었습니다.
+
 gui:
-  time_left: '남은 시간: %time%'
   scroll:
     up: 위로 스크롤
     down: 아래로 스크롤
     left: 왼쪽으로 스크롤
     right: 오른쪽으로 스크롤
+
   page:
     next: 다음 페이지 (%current%/%total%)
     previous: 이전 페이지 (%current%/%total%)
+
+  time_left: "남은 시간: %time%"
+
 guide:
   title: 파일런 가이드
   button:
-    ingredient: <yellow>%item_ingredients_page_amount%x <white>%item_ingredients_page_item%
     back:
       name: <yellow>뒤로
       lore: ''
@@ -111,6 +127,10 @@ guide:
         <arrow:#3a293> 접두사 검색은 접두사 바로 뒤에 있는 단어에만 적용됩니다
         <arrow:#3a293> 예시) <light_purple>@pylonbase <white>철 <aqua>$온도 <white>슬러리
     research:
+      cost:
+        not-enough: <arrow> <attr>해금 비용:</attr> <#e23b28>%points%/%cost%
+        enough: <arrow> <attr>해금 비용:</attr> <#61ea38>%points%/%cost%
+        researched: <arrow> <attr>해금 비용:</attr> <#61ea38>%cost% (연구됨)
       instructions: |-
         <arrow:#3a293> <guideinsn>왼쪽 클릭</guideinsn>으로 연구
         <arrow:#3a293> <guideinsn>오른쪽 클릭</guideinsn>으로 해금되는 아이템 보기
@@ -118,10 +138,6 @@ guide:
       unlocks-item: <diamond> <white>%item%
       more-researches: <diamond> <gray>외 <aqua>%amount%<gray>개 - <guideinsn>오른쪽 클릭</guideinsn> <gray>으로 모두 보기
       error: 연구 로드 실패
-      cost:
-        not-enough: <arrow> <attr>해금 비용:</attr> <#e23b28>%points%/%cost%
-        enough: <arrow> <attr>해금 비용:</attr> <#61ea38>%points%/%cost%
-        researched: <arrow> <attr>해금 비용:</attr> <#61ea38>%cost% (연구됨)
     fluid:
       name: '%fluid% <gray>(%amount%<gray>)'
       error: <red>유체 아이템 로드 실패
@@ -159,6 +175,7 @@ guide:
     main_product:
       name: <blue>↑ 입력 ↑
       lore: <gold>↓ 주요 생산물 ↓
+    ingredient: <yellow>%item_ingredients_page_amount%x <white>%item_ingredients_page_item%
     toggle-block-textures:
       enabled:
         name: '<gray>커스텀 블록 텍스쳐: <green>활성화 <dark_gray>(클릭해서 전환)'
@@ -206,6 +223,7 @@ guide:
         lore: <arrow:#3a2939> 새 연구를 해금했을 때 소리를 재생하고 색종이 조각을 나타내려면 활성화하세요
   recipe:
     cooking: <attr>조리 시간:</attr> %time%
+
   page:
     fluids: 유체
     info: 정보
@@ -222,6 +240,7 @@ guide:
     item_usages: 아이템 사용법
     fluid_usages: 유체 사용법
     item_ingredients: 재료 확인
+
 unit:
   prefix:
     quetta:
@@ -299,6 +318,7 @@ unit:
     quecto:
       name: 퀙토
       abbr: q
+
   blocks:
     singular: 블록
     plural: 블록
