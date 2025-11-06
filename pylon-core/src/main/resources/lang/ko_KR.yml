@@ -255,7 +255,7 @@ guide:
         name: "<white>연구 효과음: <red>비활성화 <dark_gray>(클릭해서 전환)"
         lore: "<arrow> 연구가 진행될 때 소리를 재생하려면 활성화하세요"
   recipe:
-    cooking: "<attr>조리 시간:</attr> %time%""
+    cooking: "<attr>조리 시간:</attr> %time%"
 
   page:
     fluids: "유체"
