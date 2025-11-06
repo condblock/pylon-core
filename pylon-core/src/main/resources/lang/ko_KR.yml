@@ -358,7 +358,7 @@ unit:
   blocks_per_second:
     singular: "블록/초"
     plural: "블록/초"
-    abbr: "블록/s"
+    abbr: "블록/초"
   chunks:
     singular: "청크"
     plural: "청크"
@@ -374,25 +374,25 @@ unit:
     singular: "연구 포인트"
     plural: "연구 포인트"
   celsius:
-    singular: "도"
-    plural: "도"
+    singular: "°C"
+    plural: "°C"
     abbr: "°C"
   buckets:
     singular: "양동이"
     plural: "양동이"
-    abbr: "양동이"
+    abbr: "B"
   buckets_per_second:
     singular: "양동이/초"
     plural: "양동이/초"
-    abbr: "양동이/s"
+    abbr: "B/s"
   days:
     singular: "일"
     plural: "일"
-    abbr: "일"
+    abbr: "d"
   hours:
     singular: "시간"
     plural: "시간"
-    abbr: "시간"
+    abbr: "h"
   minutes:
     singular: "분"
     plural: "분"
@@ -400,10 +400,10 @@ unit:
   seconds:
     singular: "초"
     plural: "초"
-    abbr: "초"
+    abbr: "s"
   joules:
-    singular: "줄"
-    plural: "줄"
+    singular: "J"
+    plural: "J"
     abbr: "J"
   watts:
     singular: "와트"
@@ -416,4 +416,4 @@ unit:
   experience_per_second:
     singular: "경험치 포인트/초"
     plural: "경험치 포인트/초"
-    abbr: "XP/s"
+    abbr: "XP/초"
