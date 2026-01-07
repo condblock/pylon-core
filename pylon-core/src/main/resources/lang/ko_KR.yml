@@ -102,10 +102,10 @@ message:
 
 gui:
   scroll:
-    up: 위로 스크롤
-    down: 아래로 스크롤
-    left: 왼쪽으로 스크롤
-    right: 오른쪽으로 스크롤
+    up: "위로 스크롤"
+    down: "아래로 스크롤"
+    left: "왼쪽으로 스크롤"
+    right: "오른쪽으로 스크롤"
 
   page:
     next: "다음 페이지 (%current%/%total%)"
@@ -417,3 +417,14 @@ unit:
     singular: "경험치 포인트/초"
     plural: "경험치 포인트/초"
     abbr: "XP/초"
+  items:
+    singular: "아이템"
+    plural: "아이템"
+  items_per_second:
+    singular: "아이템/초"
+    plural: "아이템/초"
+    abbr: "아이템/초"
+  cycles_per_second:
+    singular: "사이클/초"
+    plural: "사이클/초"
+    abbr: "사이클/초"
