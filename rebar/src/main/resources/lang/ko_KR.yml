@@ -8,9 +8,9 @@ item:
       <red>오류가 난 블록:</red> <yellow>%block%
 
   guide:
-    name: "<white>파일런 가이드"
+    name: "<white>리바 가이드"
     lore: |-
-      <guidearrow> <insn>오른쪽 클릭</insn>으로 열기
+      <arrow> <insn>오른쪽 클릭</insn>으로 열기
       <arrow> <insn>/py guide</insn> 명령어로 새 가이드 획득
       <arrow> <insn>/py</insn> 명령어로 아이템 없이 가이드 열기
 
@@ -21,7 +21,7 @@ item:
     name: "<red>디버그 밀랍칠한 녹슨 깎인 구리 계단"
     lore: |-
       <guidearrow> <insn>쉬프트 오른쪽 클릭</insn>으로 블록/엔티티 제거
-      <guidearrow> <insn>오른쪽 클릭</insn>으로 블록/엔티티의 파일런 데이터 확인
+      <guidearrow> <insn>오른쪽 클릭</insn>으로 블록/엔티티의 리바 데이터 확인
 
   fluid_pipe_intersection_marker:
     waila: "%pipe%"
@@ -38,17 +38,17 @@ fluid:
 
 message:
   debug:
-    not_a_block: "<red>파일런 블록이 아닙니다"
-    not_an_entity: "<red>파일런 엔티티가 아닙니다"
+    not_a_block: "<red>리바 블록이 아닙니다"
+    not_an_entity: "<red>리바 엔티티가 아닙니다"
     key:
-      block: "<gold>파일런 블록 키: <white>%key%"
-      entity: "<gold>파일런 엔티티 키: <white>%key%"
+      block: "<gold>리바 블록 키: <white>%key%"
+      entity: "<gold>리바 엔티티 키: <white>%key%"
     ticking:
       ticking: "<gold>Ticking: <green>Yes"
       errored: "<gold>Ticking: <red>Ticker has errored"
       not_ticking: "<gold>Ticking: <red>No"
     data: "<gold>데이터: <white>%data%"
-    deleted_data: "<white>%type% <gray>(%location%) <red>제거됨 <gray>(%location%)"
+    deleted_data: "<red>%type% <gray>(%location%) <red>제거됨 <gray>(%location%)"
 
   pipe:
     connecting: "<insn>Right click</insn> <gray>to place, <insn>deselect the pipe item</insn> <gray>to cancel"
@@ -58,7 +58,7 @@ message:
 
   disabled:
     message: "<white>%item%<red>이(가) 비활성화되었습니다"
-    lore: "<guidearrow> <#ff0000>비활성화됨 - 조합은 가능하지만 사용할 수 없습니다"
+    lore: "<arrow> <#ff0000>비활성화됨 - 조합은 가능하지만 사용할 수 없습니다"
 
   research:
     unknown: "<red>%item%을(를) 사용하는 방법을 알 수 없습니다. %research%에 대해 연구해 보세요."
@@ -118,7 +118,7 @@ gui:
   output: "출력"
 
 guide:
-  title: "파일런 가이드"
+  title: "리바 가이드"
   button:
     back:
       name: "<yellow>뒤로"
@@ -135,9 +135,9 @@ guide:
         <guidearrow> 예시) <light_purple>@pylonbase <white>철 <aqua>$온도 <white>슬러리
     research:
       cost:
-        not-enough: "<guidearrow> <attr>해금 비용:</attr> <#e23b28>%points%/%cost%"
-        enough: "<guidearrow> <attr>해금 비용:</attr> <#61ea38>%points%/%cost%"
-        researched: "<guidearrow> <attr>해금 비용:</attr> <#61ea38>%cost% (연구됨)"
+        not-enough: "<arrow> <attr>해금 비용:</attr> <#e23b28>%points%/%cost%"
+        enough: "<arrow> <attr>해금 비용:</attr> <#61ea38>%points%/%cost%"
+        researched: "<arrow> <attr>해금 비용:</attr> <#61ea38>%cost% (연구됨)"
       hints:
         research: |-
 
@@ -163,9 +163,12 @@ guide:
         <guidearrow> <guideinsn>왼쪽 클릭</guideinsn>으로 조합법 보기
         <guidearrow> <guideinsn>오른쪽 클릭</guideinsn>으로 사용법 보기
     item:
-      not-researched: "<red><u>연구되지 않은 아이템</u>"
-      not-researched-with-name: "<red><u>연구되지 않은 아이템 <gray>(%research_name%<gray>)"
-      hints:
+      not-researched:
+        no-research-cost: "<guidearrow> <red>연구되지 않음"
+        enough-points: "<guidearrow> <red>연구되지 않음 <gray>(%research_name% <gray>| <#61ea38>%player_points%/%unlock_cost%<gray>)"
+        not-enough-points: "<guidearrow> <red>연구되지 않음 <gray>(%research_name% <gray>| <#e23b28>%player_points%/%unlock_cost%<gray>)"
+
+        hints:
         researched: |-
 
           <u>도움말</u>
@@ -181,21 +184,23 @@ guide:
         admin: |-
           <guidearrow> <guideinsn>Q</guideinsn>로 아이템 한 개 획득 <#ff0000>(관리자 전용)</#ff0000>
           <guidearrow> <guideinsn>휠 클릭</guideinsn>으로 아이템 한 스택 획득 <#ff0000>(관리자 전용)</#ff0000>
-      error: "<red>Item failed to load"
+      error: "<red>아이템 로드 실패"
+      amount: "%name%: <gray>%amount%%breakdown%"
+      amount-breakdown: " (%stacks%x%stack-size% + %remainder%)"
     toggle-waila:
       enabled:
         name: "<white>WAILA: <green>활성화됨 <dark_gray>(클릭해서 전환)"
-        lore: "<guidearrow> WAILA는 바라보고 있는 파일런 블록의 정보를 표시합니다"
+        lore: "<guidearrow> WAILA는 바라보고 있는 리바 블록의 정보를 표시합니다"
       disabled:
         name: "<white>WAILA: <red>비활성화됨 <dark_gray>(클릭해서 전환)"
-        lore: "<guidearrow> WAILA는 바라보고 있는 파일런 블록의 정보를 표시합니다"
+        lore: "<guidearrow> WAILA는 바라보고 있는 리바 블록의 정보를 표시합니다"
     toggle-vanilla-waila:
       enabled:
         name: "<white>바닐라 WAILA: <green>활성화됨 <dark_gray>(클릭해서 전환)"
-        lore: "<guidearrow> WAILA가 바닐라의 블록/엔티티 정보를 표시하도록 합니다"
+        lore: "<arrow> WAILA가 바닐라의 블록/엔티티 정보를 표시하도록 합니다"
       disabled:
         name: "<white>바닐라 WAILA: <red>비활성화됨 <dark_gray>(클릭해서 전환)"
-        lore: "<guidearrow> WAILA가 바닐라의 블록/엔티티 정보를 표시하도록 합니다"
+        lore: "<arrow> WAILA가 바닐라의 블록/엔티티 정보를 표시하도록 합니다"
     cycle-waila-type:
       bossbar:
         name: "<white>WAILA 표시 방식: <green>보스바 <dark_gray>(클릭해서 전환)"
@@ -209,15 +214,6 @@ guide:
           <guidearrow> WAILA의 표시 위치를 선택합니다
           <guidearrow> <green>보스바 <dark_gray>- <gray>화면 상단에 표시됩니다
           <guidearrow> <aqua>액션바 <dark_gray>- <gray>화면 하단에 표시됩니다
-    byproducts:
-      name: "<blue>↑ 입력 ↑"
-      lore: |-
-        <yellow>↓ 부산물 ↓
-    main_product:
-      name: "<blue>↑ 입력 ↑"
-      lore: |-
-        <gold>↓ 주요 생산물 ↓
-    ingredient: "<yellow>%item_ingredients_page_amount%x <white>%item_ingredients_page_item%"
     toggle-block-textures:
       enabled:
         name: "<white>커스텀 블록 텍스쳐: <green>활성화 <dark_gray>(클릭해서 전환)"
@@ -302,7 +298,7 @@ guide:
     info: "정보"
     researches: "연구"
     research-items: "연구 아이템"
-    root: "파일런 가이드"
+    root: "리바 가이드"
     search: "검색"
     settings: "설정"
     waila_settings: "WAILA 설정"
@@ -313,6 +309,9 @@ guide:
     item_usages: "아이템 사용법"
     fluid_usages: "유체 사용법"
     item_ingredients: "재료 확인"
+    tab:
+      ingredients: "재료"
+      byproducts: "부산물"
 
 unit:
   prefix:
