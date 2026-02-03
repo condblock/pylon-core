@@ -129,10 +129,10 @@ guide:
       name: "검색 지정자"
       lore: |-
         <guidearrow> 기본적으로 정확한 이름만을 검색합니다 ("철 주괴"는 "철"과 "주괴"가 아닌 "철 주괴"만을 검색합니다)
-        <guidearrow> 접두사 <light_purple>@</light_purple>는 <light_purple>애드온</light_purple>의 id나 표기되는 이름을 검색합니다. 예시) "pylonbase" 또는 "base"
+        <guidearrow> 접두사 <light_purple>@</light_purple>는 <light_purple>애드온</light_purple>의 id나 표기되는 이름을 검색합니다. 예시) "pylon"
         <guidearrow> 접두사 <aqua>$</aqua>는 아이템의 <aqua>설명</aqua>을 검색합니다
         <guidearrow> 접두사 검색은 접두사 바로 뒤에 있는 단어에만 적용됩니다
-        <guidearrow> 예시) <light_purple>@pylonbase <white>철 <aqua>$온도 <white>슬러리
+        <guidearrow> 예시) <light_purple>@pylon <white>철 <aqua>$온도 <white>슬러리
     research:
       cost:
         not-enough: "<arrow> <attr>해금 비용:</attr> <#e23b28>%points%/%cost%"
