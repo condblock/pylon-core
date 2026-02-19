@@ -14,6 +14,7 @@ import io.github.pylonmc.rebar.item.builder.ItemStackBuilder
 import io.github.pylonmc.rebar.util.rebarKey
 import org.bukkit.block.Block
 import org.bukkit.entity.ItemDisplay
+import org.bukkit.event.EventPriority
 import org.bukkit.persistence.PersistentDataContainer
 import java.util.UUID
 
@@ -46,6 +47,22 @@ class FluidIntersectionDisplay : RebarEntity<ItemDisplay>, RebarDeathEntity, Flu
         pdc.set(CONNECTION_POINT_KEY, RebarSerializers.FLUID_CONNECTION_POINT, point)
     }
 
+    override fun writeDebugInfo(pdc: PersistentDataContainer) {
+        pdc.set(CONNECTION_POINT_KEY, RebarSerializers.FLUID_CONNECTION_POINT, point)
+        val connectedPdc = pdc.adapterContext.newPersistentDataContainer()
+        for (connectedPipeId in connectedPipeDisplays) {
+            val connectedPipe = EntityStorage.getAs<FluidPipeDisplay>(connectedPipeId)
+            if (connectedPipe == null) {
+                connectedPdc.set(rebarKey(connectedPipeId.toString()), RebarSerializers.STRING, "MISSING")
+                continue
+            }
+            val pipePdc = pdc.adapterContext.newPersistentDataContainer()
+            connectedPipe.writeDebugInfo(pipePdc)
+            connectedPdc.set(rebarKey(connectedPipeId.toString()), RebarSerializers.TAG_CONTAINER, pipePdc)
+        }
+        pdc.set(CONNECTED_PIPE_DISPLAYS_KEY, RebarSerializers.TAG_CONTAINER, connectedPdc)
+    }
+
     override fun connectPipeDisplay(uuid: UUID) {
         this.connectedPipeDisplays.add(uuid)
     }
@@ -55,7 +72,7 @@ class FluidIntersectionDisplay : RebarEntity<ItemDisplay>, RebarDeathEntity, Flu
         this.connectedPipeDisplays.remove(uuid)
     }
 
-    override fun onDeath(event: RebarEntityDeathEvent) {
+    override fun onDeath(event: RebarEntityDeathEvent, priority: EventPriority) {
         FluidManager.remove(point)
     }
 
