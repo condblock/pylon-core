@@ -122,9 +122,6 @@ guide:
   button:
     back:
       name: "<yellow>뒤로"
-      hints: |-
-        <guidearrow> <guideinsn>클릭</guideinsn>으로 한 페이지 뒤로 이동
-        <guidearrow> <guideinsn>쉬프트 왼쪽 클릭</guideinsn>으로 메인 메뉴로 이동
     search-specifiers:
       name: "검색 지정자"
       lore: |-
@@ -144,7 +141,7 @@ guide:
           <u>도움말</u>
           <guidearrow> <guideinsn>오른쪽 클릭</guideinsn>으로 해금되는 아이템 보기
         unresearched: |-
-
+          
           <u>도움말</u>
           <guidearrow> <guideinsn>왼쪽 클릭</guideinsn>으로 연구
           <guidearrow> <guideinsn>오른쪽 클릭</guideinsn>으로 해금되는 아이템 보기
@@ -157,11 +154,6 @@ guide:
     fluid:
       name: "%fluid% <gray>(%amount%<gray>)"
       error: "<red>유체 아이템 로드 실패"
-      hints: |-
-
-        <u>도움말</u>
-        <guidearrow> <guideinsn>왼쪽 클릭</guideinsn>으로 조합법 보기
-        <guidearrow> <guideinsn>오른쪽 클릭</guideinsn>으로 사용법 보기
     item:
       not-researched:
         no-research-cost: "<guidearrow> <red>연구되지 않음"
@@ -169,18 +161,10 @@ guide:
         not-enough-points: "<guidearrow> <red>연구되지 않음 <gray>(%research_name% <gray>| <#e23b28>%player_points%/%unlock_cost%<gray>)"
 
       hints:
-        researched: |-
-
-          <u>도움말</u>
-          <guidearrow> <guideinsn>왼쪽 클릭</guideinsn>으로 조합법 보기
-          <guidearrow> <guideinsn>오른쪽 클릭</guideinsn>으로 사용법 보기
         unresearched: |-
-
+          
           <u>도움말</u>
-          <guidearrow> <guideinsn>왼쪽 클릭</guideinsn>으로 조합법 보기
-          <guidearrow> <guideinsn>오른쪽 클릭</guideinsn>으로 사용법 보기
           <guidearrow> <guideinsn>쉬프트 왼쪽 클릭</guideinsn>으로 연구
-          <guidearrow> <guideinsn>쉬프트 오른쪽 클릭</guideinsn>으로 연구로 해금되는 다른 물품 보기
       error: "<red>아이템 로드 실패"
       amount: "%name%: <gray>%amount%%breakdown%"
       amount-breakdown: " (%stacks%x%stack-size% + %remainder%)"
@@ -367,6 +351,57 @@ guide:
         name: "<white>가이드 도움말: <red>비활성화 <dark_gray>(클릭해서 전환)"
         lore: |-
           <guidearrow> 가이드 내부의 <guideinsn>도움말</guideinsn> 표시 여부
+    info:
+      discord:
+        name: "<white>디스코드"
+        lore: |-
+          <guidearrow> <guideinsn>클릭</guideinsn>해서 공식 리바 디스코드 서버 링크 받기
+        message: "클릭해서 공식 리바 디스코드 서버 링크를 여세요!"
+      rebar_setup:
+        name: "<white>리바 설치"
+        lore: |-
+          <guidearrow> <guideinsn>클릭</guideinsn>해서 리바 설치 가이드 링크 받기
+        message: "클릭해서 리바 설치 가이드를 여세요!"
+      rebar_addons:
+        name: "<white>리바 애드온"
+        lore: |-
+          <guidearrow> <guideinsn>클릭</guideinsn>해서 공식 리바 애드온 목록 링크 받기
+        message: "클릭해서 공식 리바 애드온 목록을 여세요!"
+      cheat_controls:
+        name: "<white>가이드 치트 조작"
+        lore: |-
+          <guidearrow> 관리자 권한으로 리바 가이드에서 치트 조작을 사용할 수 있습니다
+          <guidearrow> <guideinsn>아이템 버리기(Q)</guideinsn>로 리바 아이템을 한 개 얻습니다
+          <guidearrow> <guideinsn>마우스 휠 버튼 클릭</guideinsn>으로 리바 아이템을 한 스택 얻습니다
+      rebar:
+        name: "<white>리바란?"
+        lore: |-
+          <guidearrow> 리바는 사용자 지정 블록, 아이템, 엔티티 등을 추가하는 마인크래프트 플러그인 프레임워크입니다
+          <guidearrow> 리바 자체는 이 가이드와 백엔드 시스템만 제공하며, 애드온(예: 파일론)이 모든 콘텐츠를 제공합니다
+      guide_controls:
+        name: "<white>가이드 조작"
+        lore: |-
+          <u>아이템/유체 버튼</u>
+          <guidearrow> <guideinsn>왼쪽 클릭</guideinsn>으로 조합법 보기
+          <guidearrow> <guideinsn>오른쪽 클릭</guideinsn>으로 사용법 보기
+          <guidearrow> <guideinsn>쉬프트 오른쪽 클릭</guideinsn>으로 연구 열기 (해당 연구가 있는 경우)
+          
+          <u>뒤로가기 버튼</u>
+          <guidearrow> <guideinsn>클릭</guideinsn>으로 한 페이지 뒤로 이동
+          <guidearrow> <guideinsn>쉬프트 왼쪽 클릭</guideinsn>으로 메인 메뉴로 이동
+      settings:
+        name: "<white>가이드 설정"
+        lore: |-
+          <guidearrow> 메인 페이지의 왼쪽 상단에 설정이 있습니다
+          <guidearrow> 설정에는 WAILA, 블록 컬링, 리소스 팩 설정 등 다양한 옵션이 포함되어 있습니다
+          
+          <guidearrow> <guideinsn>클릭</guideinsn>으로 설정 페이지 열기
+      researches:
+        name: "<white>연구"
+        lore: |-
+          <guidearrow> 리바 아이템/블록 잠겨 있을 수 있고, 가이드에서 표시되는 연구를 해금해야 합니다
+          <guidearrow> 기본적으로 연구는 연구 포인트를 소모하여 해금되며, 애드온을 통해 포인트를 얻는 방법을 추가할 수 있습니다
+          <guidearrow> 연구를 해금하지 않으면 해당 연구에 포함된 아이템/블록을 사용할 수 없습니다
   recipe:
     cooking: "<attr>조리 시간:</attr> %time%"
 
@@ -374,6 +409,7 @@ guide:
     fluids: "유체"
     info: "정보"
     researches: "연구"
+    researches_addon: "%addon% 연구"
     research-items: "연구 아이템"
     root: "리바 가이드"
     search: "검색"
@@ -390,6 +426,11 @@ guide:
     tab:
       ingredients: "재료"
       byproducts: "부산물"
+    info_administrators: "관리자 정보"
+    contributors: "기여자"
+    contributors_addon: "%addon% 기여자"
+    info_rebar: "리바 정보"
+    info_researching: "연구 정보"
 
 unit:
   prefix:
@@ -422,7 +463,7 @@ unit:
       abbr: "M"
     kilo:
       name: "킬로"
-      abbr: "K"
+      abbr: "k"
     hecto:
       name: "헥토"
       abbr: "h"
@@ -475,7 +516,7 @@ unit:
   blocks_per_second:
     singular: "블록/초"
     plural: "블록/초"
-    abbr: "블록/초"
+    abbr: "블록/s"
   chunks:
     singular: "청크"
     plural: "청크"
@@ -513,14 +554,14 @@ unit:
   minutes:
     singular: "분"
     plural: "분"
-    abbr: "분"
+    abbr: "m"
   seconds:
     singular: "초"
     plural: "초"
     abbr: "s"
   joules:
-    singular: "J"
-    plural: "J"
+    singular: "줄"
+    plural: "줄"
     abbr: "J"
   watts:
     singular: "와트"
@@ -529,11 +570,11 @@ unit:
   experience:
     singular: "경험치 포인트"
     plural: "경험치 포인트"
-    abbr: "XP"
+    abbr: "경험치 포인트"
   experience_per_second:
     singular: "경험치 포인트/초"
     plural: "경험치 포인트/초"
-    abbr: "XP/초"
+    abbr: "경험치 포인트/초"
   items:
     singular: "아이템"
     plural: "아이템"
@@ -542,6 +583,6 @@ unit:
     plural: "아이템/초"
     abbr: "아이템/초"
   cycles_per_second:
-    singular: "사이클/초"
-    plural: "사이클/초"
-    abbr: "사이클/초"
+    singular: "번/초"
+    plural: "번/초"
+    abbr: "번/초"
