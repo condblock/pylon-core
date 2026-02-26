@@ -6,19 +6,22 @@ import io.github.pylonmc.rebar.block.BlockStorage
 import io.github.pylonmc.rebar.event.api.MultiListener
 import io.github.pylonmc.rebar.event.api.annotation.MultiHandlers
 import io.github.pylonmc.rebar.event.api.annotation.UniversalHandler
+import org.bukkit.entity.memory.MemoryKey
 import org.bukkit.event.EventPriority
-import org.bukkit.event.block.BlockRedstoneEvent
+import org.bukkit.event.entity.VillagerCareerChangeEvent
 
-interface RebarRedstoneBlock {
-    fun onCurrentChange(event: BlockRedstoneEvent, priority: EventPriority)
+interface RebarJobBlock {
+    fun onVillagerAcquireJob(event: VillagerCareerChangeEvent, priority: EventPriority)
 
     companion object : MultiListener {
         @UniversalHandler
-        private fun onRedstoneCurrentChange(event: BlockRedstoneEvent, priority: EventPriority) {
-            val rebarBlock = BlockStorage.get(event.block)
-            if (rebarBlock is RebarRedstoneBlock) {
+        private fun onVillagerChangeProfession(event: VillagerCareerChangeEvent, priority: EventPriority) {
+            if (event.reason != VillagerCareerChangeEvent.ChangeReason.EMPLOYED) return;
+            val jobSite = event.entity.getMemory(MemoryKey.JOB_SITE) ?: return
+            val rebarBlock = BlockStorage.get(jobSite)
+            if (rebarBlock is RebarJobBlock) {
                 try {
-                    MultiHandlers.handleEvent(rebarBlock, "onCurrentChange", event, priority)
+                    MultiHandlers.handleEvent(rebarBlock, "onVillagerAcquireJob", event, priority)
                 } catch (e: Exception) {
                     BlockListener.logEventHandleErr(event, e, rebarBlock)
                 }
