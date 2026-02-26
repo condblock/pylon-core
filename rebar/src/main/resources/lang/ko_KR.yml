@@ -137,7 +137,7 @@ guide:
         researched: "<arrow> <attr>해금 비용:</attr> <#61ea38>%cost% (연구됨)"
       hints:
         researched: |-
-
+          
           <u>도움말</u>
           <guidearrow> <guideinsn>오른쪽 클릭</guideinsn>으로 해금되는 아이템 보기
         unresearched: |-
@@ -146,7 +146,7 @@ guide:
           <guidearrow> <guideinsn>왼쪽 클릭</guideinsn>으로 연구
           <guidearrow> <guideinsn>오른쪽 클릭</guideinsn>으로 해금되는 아이템 보기
       unlocks-title: |-
-
+      
         <u>해금되는 아이템</u>
       unlocks-item: "<diamond> <white>%item%"
       more-researches: "<diamond> <gray>외 <aqua>%amount%<gray>개 - <guideinsn>오른쪽 클릭</guideinsn> <gray>으로 모두 보기"
