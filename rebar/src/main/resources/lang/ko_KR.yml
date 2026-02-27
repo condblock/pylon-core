@@ -133,7 +133,7 @@ guide:
     research:
       cost:
         not-enough: "<arrow> <attr>해금 비용:</attr> <#e23b28>%player_points%/%unlock_cost%"
-        enough: "<arrow> <attr>해금 비용:</attr> <#61ea38>%player_points%/%unlock_cost%""
+        enough: "<arrow> <attr>해금 비용:</attr> <#61ea38>%player_points%/%unlock_cost%"
         researched: "<arrow> <attr>해금 비용:</attr> <#61ea38>%unlock_cost% (연구됨)"
       hints:
         researched: |-
