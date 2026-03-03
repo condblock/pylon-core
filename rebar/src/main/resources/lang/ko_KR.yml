@@ -98,6 +98,9 @@ message:
     exposerecipe:
       not-configurable: "<red>조합법를 설정할 수 없습니다"
       warning: "<yellow>주의: 조합법 구성을 노출하면 자동으로 업데이트되지 않습니다. 되돌리려면 %file%을 삭제하세요"
+    finishmultiblock:
+      failed: "<red>멀티블록을 바라보고 있지 않습니다"
+      success: "멀티블록 완성됨"
 
   waila:
     type-disabled: "<red>이 서버는 더 이상 이전에 설정한 %type% WAILA 표시 유형을 허용하지 않습니다. 기본값으로 재설정되었습니다."
