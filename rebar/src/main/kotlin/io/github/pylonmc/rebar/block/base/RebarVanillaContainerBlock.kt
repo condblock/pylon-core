@@ -38,7 +38,7 @@ interface RebarVanillaContainerBlock {
 
         @UniversalHandler
         private fun onItemMove(event: InventoryMoveItemEvent, priority: EventPriority) {
-            val sourceHolder = event.source.holder
+            val sourceHolder = event.source.getHolder(false)
             if (sourceHolder is BlockInventoryHolder) {
                 val sourceBlock = BlockStorage.get(sourceHolder.block)
                 if (sourceBlock is RebarVanillaContainerBlock) {
@@ -50,7 +50,7 @@ interface RebarVanillaContainerBlock {
                 }
             }
 
-            val destHolder = event.destination.holder
+            val destHolder = event.destination.getHolder(false)
             if (destHolder is BlockInventoryHolder) {
                 val destBlock = BlockStorage.get(destHolder.block)
                 if (destBlock is RebarVanillaContainerBlock) {
