@@ -3,13 +3,11 @@ package io.github.pylonmc.rebar.i18n
 import io.github.pylonmc.rebar.Rebar
 import io.github.pylonmc.rebar.addon.RebarAddon
 import io.github.pylonmc.rebar.config.Config
-import io.github.pylonmc.rebar.config.RebarConfig
 import io.github.pylonmc.rebar.config.adapter.ConfigAdapter
 import io.github.pylonmc.rebar.datatypes.RebarSerializers
 import io.github.pylonmc.rebar.event.RebarRegisterEvent
 import io.github.pylonmc.rebar.event.RebarUnregisterEvent
 import io.github.pylonmc.rebar.i18n.RebarTranslator.Companion.translator
-import io.github.pylonmc.rebar.i18n.wrapping.LineWrapEncoder
 import io.github.pylonmc.rebar.item.builder.ItemStackBuilder
 import io.github.pylonmc.rebar.item.builder.customMiniMessage
 import io.github.pylonmc.rebar.nms.NmsAccessor
@@ -23,9 +21,7 @@ import io.papermc.paper.datacomponent.item.ItemLore
 import io.papermc.paper.datacomponent.item.ResolvableProfile
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.*
-import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.Style
-import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.translation.GlobalTranslator
 import net.kyori.adventure.translation.Translator
 import org.apache.commons.lang3.LocaleUtils
@@ -39,8 +35,7 @@ import org.bukkit.event.player.PlayerLocaleChangeEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.inventory.ItemStack
 import java.text.MessageFormat
-import java.util.Locale
-import java.util.WeakHashMap
+import java.util.*
 import kotlin.io.path.exists
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.nameWithoutExtension
@@ -238,16 +233,8 @@ class RebarTranslator private constructor(private val addon: RebarAddon) : Trans
                     }
                     val translated = GlobalTranslator.render(line.withArguments(concatenatedArguments), locale)
                     if (translated.plainText.isBlank()) return@flatMap emptyList()
-                    val encoded = LineWrapEncoder.encode(translated)
-                    val wrapped = encoded.copy(
-                        lines = encoded.lines.flatMap { wrapText(it, RebarConfig.TRANSLATION_WRAP_LIMIT) }
-                    )
-                    wrapped.toComponentLines().map {
-                        Component.text()
-                            .decoration(TextDecoration.ITALIC, false)
-                            .color(NamedTextColor.GRAY)
-                            .append(it)
-                            .build()
+                    LineWrapping.splitByNewlines(translated).flatMap {
+                        LineWrapping.wrapLine(it)
                     }
                 }
                 ItemLore.lore(newLore)
