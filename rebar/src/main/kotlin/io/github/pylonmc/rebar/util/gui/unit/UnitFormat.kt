@@ -310,6 +310,13 @@ class UnitFormat @JvmOverloads constructor(
         )
 
         @JvmField
+        val STACKS = UnitFormat(
+            "stacks",
+            TextColor.color(0x44d2e2),
+            abbreviate = false
+        )
+
+        @JvmField
         val CYCLES_PER_SECOND = UnitFormat(
             "cycles_per_second",
             TextColor.color(0xb672bf),
