@@ -18,7 +18,10 @@ import io.github.pylonmc.rebar.util.position.position
 import io.papermc.paper.event.block.BlockBreakBlockEvent
 import org.bukkit.ExplosionResult
 import org.bukkit.Material
+import org.bukkit.block.Block
+import org.bukkit.entity.EntityType
 import org.bukkit.entity.FallingBlock
+import org.bukkit.entity.Item
 import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -87,58 +90,77 @@ internal object BlockListener : MultiListener {
         if (entity !is FallingBlock) return
 
         val block = event.block
+
         if (!entity.isInWorld) {
-            val rebarBlock = BlockStorage.get(block) ?: return
-            val rebarFallingBlock = rebarBlock as? RebarFallingBlock
-            if (rebarFallingBlock == null) {
-                event.isCancelled = true
-                return
-            }
-
-            val blockPdc = RebarBlock.serialize(rebarBlock, block.chunk.persistentDataContainer.adapterContext)
-            val fallingEntity = RebarFallingBlock.RebarFallingBlockEntity(rebarBlock.schema, blockPdc, block.position, entity)
-            rebarFallingBlock.onFallStart(event, fallingEntity)
-            if (!event.isCancelled) {
-                BlockStorage.deleteBlock(block.position)
-                EntityStorage.add(fallingEntity)
-                // save this here as the entity storage is going to nuke it if the item drops
-                fallMap[entity.uniqueId] = Pair(rebarFallingBlock, fallingEntity)
-            }
+            handleFallStart(block, event, entity)
         } else {
-            val isRebarEntity = EntityStorage.get(entity) is RebarFallingBlock.RebarFallingBlockEntity
-            if (event.entity is FallingBlock && BlockStorage.get(event.block) != null) {
-                // Issue #579 - Prevent pylon blocks being broken by gravity blocks
-                event.isCancelled = true
-                if (isRebarEntity) {
-                    // Rebar gravity block hits a rebar block
-                    val rebarEntity = EntityStorage.get(entity) as RebarFallingBlock.RebarFallingBlockEntity
-                    val rebarItemSchema = RebarRegistry.ITEMS.get(rebarEntity.blockSchema.key)
-                    if (rebarItemSchema != null) {
-                        event.block.world.dropItemNaturally(
-                            event.block.location,
-                            rebarItemSchema.getItemStack()
-                        )
-                    }
-                } else {
-                    // Vanilla gravity block hits a rebar block
-                    event.block.world.dropItemNaturally(
-                        event.block.location,
-                        ItemStack.of((event.entity as FallingBlock).material)
-                    )
-                }
-                return
-            } else if (isRebarEntity) {
-                // Rebar gravity block normally falls
-                val rebarEntity = EntityStorage.get(entity) as RebarFallingBlock.RebarFallingBlockEntity
-                val rebarBlock = BlockStorage.loadBlock(
-                    block.position,
-                    rebarEntity.blockSchema,
-                    rebarEntity.blockData
-                ) as RebarFallingBlock
-
-                rebarBlock.onFallStop(event, rebarEntity)
-            }
+            handleFallStop(block, event, entity)
         }
+    }
+
+    private fun handleFallStop(
+        block: Block,
+        event: EntityChangeBlockEvent,
+        entity: FallingBlock
+    ) {
+        val rebarEntity = EntityStorage.get(entity) as? RebarFallingBlock.RebarFallingBlockEntity
+
+        // falling onto another pylon block
+        if (BlockStorage.get(block) != null) {
+            val drop = if (rebarEntity == null) {
+                ItemStack.of(entity.blockData.material)
+            } else {
+                rebarEntity.fallbackItem()
+            }
+
+            if (drop != null) {
+                entity.world.dropItemNaturally(entity.location, drop)
+            }
+
+            entity.remove()
+            event.isCancelled = true
+            return
+        }
+
+        // if everything is valid, place the block
+        rebarEntity ?: return
+        val rebarBlock = BlockStorage.loadBlock(
+            block.position,
+            rebarEntity.blockSchema,
+            rebarEntity.blockData
+        ) as RebarFallingBlock
+
+        rebarBlock.onFallStop(event, rebarEntity)
+    }
+
+    private fun handleFallStart(
+        block: Block,
+        event: EntityChangeBlockEvent,
+        entity: FallingBlock
+    ) {
+        val rebarBlock = BlockStorage.get(block) ?: return
+        val rebarFallingBlock = rebarBlock as? RebarFallingBlock
+        if (rebarFallingBlock == null) {
+            event.isCancelled = true
+            return
+        }
+
+        val blockPdc = RebarBlock.serialize(rebarBlock, block.chunk.persistentDataContainer.adapterContext)
+        val fallingEntity = RebarFallingBlock.RebarFallingBlockEntity(
+            rebarBlock.schema,
+            blockPdc,
+            block.position,
+            entity
+        )
+
+        rebarFallingBlock.onFallStart(event, fallingEntity)
+
+        if (event.isCancelled) return
+
+        BlockStorage.deleteBlock(block.position)
+        EntityStorage.add(fallingEntity)
+        // save this here as the entity storage is going to nuke it if the item drops
+        fallMap[entity.uniqueId] = Pair(rebarFallingBlock, fallingEntity)
     }
 
     @EventHandler
@@ -174,7 +196,9 @@ internal object BlockListener : MultiListener {
         val block = BlockStorage.get(event.block) ?: return
         val context = BlockBreakContext.PlayerBreak(event);
         if (priority == EventPriority.LOWEST) {
-            if (!BlockStorage.preBreakBlock(block, context)) {
+            val schema = block.defaultItem
+            if ((schema != null && !event.player.canUse(schema, true))
+                || !BlockStorage.preBreakBlock(block, context)) {
                 event.isCancelled = true
                 return
             }

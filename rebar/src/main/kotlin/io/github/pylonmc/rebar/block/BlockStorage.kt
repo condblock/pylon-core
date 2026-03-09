@@ -208,20 +208,29 @@ object BlockStorage : Listener {
         }
 
     /**
-     * Returns whether the block at [blockPosition] is a Rebar block, or null if the
-     * chunk at [blockPosition] is not loaded
+     * Returns whether the block at [blockPosition] is a Rebar block.
+     * Returns false if the chunk at [blockPosition] is not loaded.
      */
     @JvmStatic
     fun isRebarBlock(blockPosition: BlockPosition): Boolean =
         (blockPosition.chunk.isLoaded) && get(blockPosition) != null
 
     /**
-     * Returns whether the block at [block] is a Rebar block, or null if the
-     * chunk at [block] is not loaded
+     * Returns whether the block at [block] is a Rebar block.
+     * Returns false if the chunk at [blockPosition] is not loaded.
      */
     @JvmStatic
     fun isRebarBlock(block: Block): Boolean =
         (block.position.chunk.isLoaded) && get(block) != null
+
+    /**
+     * Returns whether the block at [location] is a Rebar block
+     * Returns false if the chunk at [blockPosition] is not loaded.
+     */
+    @JvmStatic
+    fun isRebarBlock(location: Location): Boolean =
+        (location.chunk.isLoaded) && get(location) != null
+
 
     /**
      * Creates a new Rebar block. Only call on the main thread.

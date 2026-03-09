@@ -31,6 +31,7 @@ import io.papermc.paper.datacomponent.DataComponentTypes
 import me.tofaa.entitylib.meta.display.ItemDisplayMeta
 import net.kyori.adventure.key.Key
 import org.bukkit.Bukkit
+import org.bukkit.Keyed
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.World
@@ -55,14 +56,14 @@ import org.bukkit.persistence.PersistentDataContainer
  *
  * @see BlockStorage
  */
-open class RebarBlock internal constructor(val block: Block) {
+open class RebarBlock internal constructor(val block: Block) : Keyed {
 
     /**
      * All the data needed to create or load the block.
      */
     val schema = RebarBlockSchema.schemaCache.remove(block.position)!!
 
-    val key = schema.key
+    override fun getKey(): NamespacedKey = schema.key
 
     val nameTranslationKey = schema.nameTranslationKey
     val loreTranslationKey = schema.loreTranslationKey
@@ -164,7 +165,11 @@ open class RebarBlock internal constructor(val block: Block) {
         meta.item = SpigotConversionUtil.fromBukkitItemStack(item)
         meta.displayType = ItemDisplayMeta.DisplayType.FIXED
         meta.brightnessOverride = 15 shl 4 or 15 shl 20;
-        meta.scale = Vector3f(1 + BlockTextureEntity.BLOCK_OVERLAP_INCREASE, 1 + BlockTextureEntity.BLOCK_OVERLAP_INCREASE, 1 + BlockTextureEntity.BLOCK_OVERLAP_INCREASE)
+        meta.scale = Vector3f(
+            1 + BlockTextureEntity.BLOCK_OVERLAP_INCREASE,
+            1 + BlockTextureEntity.BLOCK_OVERLAP_INCREASE,
+            1 + BlockTextureEntity.BLOCK_OVERLAP_INCREASE
+        )
         meta.width = 0f
         meta.height = 0f
     }

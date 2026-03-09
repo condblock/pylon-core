@@ -248,7 +248,7 @@ object BlockCullingEngine : Listener {
     @JvmSynthetic
     internal fun stopCullingJob(playerId: UUID) {
         blockTextureOctrees.values.forEach { it.allEntries().forEach { b -> b.blockTextureEntity?.removeViewer(playerId) } }
-        jobs.remove(playerId)
+        jobs.remove(playerId)?.cancel()
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -329,7 +329,7 @@ object BlockCullingEngine : Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     private fun onPlayerQuit(event: PlayerQuitEvent) {
-        jobs.remove(event.player.uniqueId)?.cancel()
+        stopCullingJob(event.player.uniqueId)
         invertedVisibilityCache.remove(event.player.uniqueId)
         syncJobTasks.remove(event.player.uniqueId)
     }
