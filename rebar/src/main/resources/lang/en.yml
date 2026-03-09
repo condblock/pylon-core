@@ -585,6 +585,9 @@ unit:
     singular: "item per second"
     plural: "items per second"
     abbr: "items/s"
+  stacks:
+    singular: "stack"
+    plural: "stacks"
   cycles_per_second:
     singular: "cycle per second"
     plural: "cycles per second"

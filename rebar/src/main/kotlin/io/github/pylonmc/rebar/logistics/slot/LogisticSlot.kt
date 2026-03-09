@@ -23,7 +23,7 @@ interface LogisticSlot {
 
     /**
      * Returns the maximum amount for the given stack (which may not necessarily
-     * be the same as the stack returned by [getItemStack].
+     * be the same as the stack returned by [getItemStack]).
      */
     fun getMaxAmount(stack: ItemStack): Long
 
