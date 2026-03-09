@@ -404,7 +404,7 @@ private val exposeRecipeConfig = buildCommand("exposerecipeconfig") {
                 }
                 sender.sendFeedback(
                     "exposerecipe.warning",
-                    RebarArgument.of("file", "plugins/rbbar/${recipeType.filePath}")
+                    RebarArgument.of("file", "plugins/Rebar/${recipeType.filePath}")
                 )
                 mergeGlobalConfig(addon, recipeType.filePath, recipeType.filePath)
             }
