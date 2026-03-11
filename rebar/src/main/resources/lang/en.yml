@@ -437,6 +437,7 @@ guide:
     help_rebar: "Rebar info"
     help_researching: "Researching info"
     info: "Info"
+    machine_recipes: "Machine recipes"
 
 unit:
   prefix:

@@ -24,6 +24,7 @@ import io.github.pylonmc.rebar.item.builder.ItemStackBuilder
 import io.github.pylonmc.rebar.item.research.Research
 import io.github.pylonmc.rebar.recipe.FluidOrItem
 import io.github.pylonmc.rebar.registry.RebarRegistry
+import io.github.pylonmc.rebar.util.gui.GuiItems
 import io.github.pylonmc.rebar.util.rebarKey
 import io.papermc.paper.datacomponent.DataComponentTypes
 import net.kyori.adventure.key.Key
@@ -37,6 +38,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.inventory.ItemStack
+import xyz.xenondevs.invui.item.Item
 import java.util.UUID
 
 /**
@@ -170,7 +172,14 @@ class RebarGuide(stack: ItemStack) : RebarItem(stack), RebarInteractor {
         fun ingredientsButton(input: FluidOrItem) = PageButton(Material.SCULK_SENSOR, ingredientsPage(input))
 
         @JvmStatic
-        fun infoButton(input: FluidOrItem) = PageButton(Material.NETHER_STAR, infoPage(input.key))
+        fun infoButton(input: FluidOrItem): Item {
+            val page = getInfoPage(input.key)
+            return if (page == null) {
+                GuiItems.background()
+            } else {
+                PageButton(Material.NETHER_STAR, page)
+            }
+        }
 
         /**
          * Hide an item from showing up in searches
@@ -210,8 +219,15 @@ class RebarGuide(stack: ItemStack) : RebarItem(stack), RebarInteractor {
          * is called.
          */
         @JvmStatic
-        fun infoPage(key: NamespacedKey)
+        fun getOrCreateInfoPage(key: NamespacedKey)
             = infoPages.computeIfAbsent(key) { SimpleInfoPage() }
+
+        /**
+         * Returns the info page menu for an item or fluid.
+         */
+        @JvmStatic
+        fun getInfoPage(key: NamespacedKey)
+            = infoPages[key]
 
         /**
          * Opens the guide to the last page that the player was on
