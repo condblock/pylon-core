@@ -1,2 +1,2 @@
 install:
-  - ./gradlew clean shadowJar publishToMavenLocal
+  - ./gradlew clean jar publishToMavenLocal
