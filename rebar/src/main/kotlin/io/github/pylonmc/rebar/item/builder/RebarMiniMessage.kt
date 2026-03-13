@@ -39,10 +39,10 @@ import org.bukkit.potion.PotionEffectType
  * - `<unit:\[prefix\]:[unit name]></unit>` - Formats a **constant** number as a unit, with an optional metric prefix
  * - `<nbsp></nbsp>` - Replaces spaces with non-breaking spaces ( ), useful for preventing line breaks in lore
  * - `<item:\[material/NamespacedKey\]>` - Renders the translated name of a vanilla/rebar item (e.g., `<item:stone>` → "Stone", `<item:pylon:loupe>` → "Loupe")
- * - `<entity:\[entity_type\]>` - Renders the translated name of an entity type (e.g., `<entity:creeper>` → "Creeper")
- * - `<effect:\[effect_type\]>` - Renders the translated name of a potion effect (e.g., `<effect:speed>` → "Speed")
- * - `<enchant:\[enchantment\]>` - Renders the translated name of an enchantment (e.g., `<enchant:sharpness>` → "Sharpness")
- * - `<biome:\[biome\]>` - Renders the translated name of a biome (e.g., `<biome:plains>` → "Plains")
+ * - `<entity:\[entity_type/NamespacedKey\]>` - Renders the translated name of an entity type (e.g., `<entity:creeper>` → "Creeper")
+ * - `<effect:\[effect_type/NamespacedKey\]>` - Renders the translated name of a potion effect (e.g., `<effect:speed>` → "Speed")
+ * - `<enchant:\[enchantment/NamespacedKey\]>` - Renders the translated name of an enchantment (e.g., `<enchant:sharpness>` → "Sharpness")
+ * - `<biome:\[biome/NamespacedKey\]>` - Renders the translated name of a biome (e.g., `<biome:plains>` → "Plains")
  *   
  * For item, entity, effect, enchant, and biome tags:
  * - If no namespace is provided (e.g., `stone`), it defaults to `minecraft:stone`
@@ -124,17 +124,10 @@ private val nbspReplacement = TextReplacementConfig.builder()
     .build()
 
 private fun item(args: ArgumentQueue, ctx: Context): Tag {
-    val argsList = args.iterator().asSequence().toList()
-    val arg = when (argsList.size) {
-        2 -> "${argsList[0].value()}:${argsList[1].value()}"
-        1 -> argsList[0].value()
-        else -> throw ctx.newException("Expected 1 or 2 arguments, got ${argsList.size}")
-    }
-    val nsKey = NamespacedKey.fromString(arg) ?: throw ctx.newException("Invalid NamespacedKey: $arg")
-
+    val nsKey = parseNamespacedKey(args, ctx)
     val translationKey = if (nsKey.namespace == NamespacedKey.MINECRAFT) {
         val material = Material.matchMaterial(nsKey.key)
-            ?: throw ctx.newException("Unknown material: $arg")
+            ?: throw ctx.newException("Unknown material: $nsKey")
         material.translationKey()
     } else {
         "${nsKey.namespace}.item.${nsKey.key}.name"
@@ -143,40 +136,32 @@ private fun item(args: ArgumentQueue, ctx: Context): Tag {
     return Tag.selfClosingInserting(Component.translatable(translationKey))
 }
 
-private fun entity(args: ArgumentQueue, @Suppress("unused") ctx: Context): Tag {
-    val arg = args.peek()?.value() ?: throw ctx.newException("Expected argument")
-    val nsKey = NamespacedKey.fromString(arg) ?: throw ctx.newException("Invalid NamespacedKey: $arg")
-
+private fun entity(args: ArgumentQueue, ctx: Context): Tag {
+    val nsKey = parseNamespacedKey(args, ctx)
     val entityType = RegistryAccess.registryAccess().getRegistry(RegistryKey.ENTITY_TYPE).get(nsKey)
         ?: throw ctx.newException("Unknown entity type: $nsKey")
 
     return Tag.selfClosingInserting(Component.translatable(entityType.translationKey()))
 }
 
-private fun effect(args: ArgumentQueue, @Suppress("unused") ctx: Context): Tag {
-    val arg = args.peek()?.value() ?: throw ctx.newException("Expected argument")
-    val nsKey = NamespacedKey.fromString(arg) ?: throw ctx.newException("Invalid NamespacedKey: $arg")
-
+private fun effect(args: ArgumentQueue, ctx: Context): Tag {
+    val nsKey = parseNamespacedKey(args, ctx)
     val effect = RegistryAccess.registryAccess().getRegistry(RegistryKey.MOB_EFFECT).get(nsKey)
         ?: throw ctx.newException("Unknown potion effect type: $nsKey")
 
     return Tag.selfClosingInserting(Component.translatable(effect.translationKey()))
 }
 
-private fun enchantment(args: ArgumentQueue, @Suppress("unused") ctx: Context): Tag {
-    val arg = args.peek()?.value() ?: throw ctx.newException("Expected argument")
-    val nsKey = NamespacedKey.fromString(arg) ?: throw ctx.newException("Invalid NamespacedKey: $arg")
-
+private fun enchantment(args: ArgumentQueue, ctx: Context): Tag {
+    val nsKey = parseNamespacedKey(args, ctx)
     val enchantment = RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(nsKey)
         ?: throw ctx.newException("Unknown enchantment: $nsKey")
 
     return Tag.selfClosingInserting(Component.translatable(enchantment.translationKey()))
 }
 
-private fun biome(args: ArgumentQueue, @Suppress("unused") ctx: Context): Tag {
-    val arg = args.peek()?.value() ?: throw ctx.newException("Expected argument")
-    val nsKey = NamespacedKey.fromString(arg) ?: throw ctx.newException("Invalid NamespacedKey: $arg")
-
+private fun biome(args: ArgumentQueue, ctx: Context): Tag {
+    val nsKey = parseNamespacedKey(args, ctx)
     val biome = RegistryAccess.registryAccess().getRegistry(RegistryKey.BIOME).get(nsKey)
         ?: throw ctx.newException("Unknown biome: $nsKey")
 
@@ -188,6 +173,16 @@ private fun parseColor(color: String): TextColor {
     return TextColor.fromHexString(theOnlyTrueWayToSpellGray)
         ?: NamedTextColor.NAMES.value(theOnlyTrueWayToSpellGray)
         ?: throw IllegalArgumentException("No such color: $color")
+}
+
+private fun parseNamespacedKey(args: ArgumentQueue, ctx: Context): NamespacedKey {
+    val argsList = args.iterator().asSequence().toList()
+    val arg = when (argsList.size) {
+        2 -> "${argsList[0].value()}:${argsList[1].value()}"
+        1 -> argsList[0].value()
+        else -> throw ctx.newException("Expected 1 or 2 arguments, got ${argsList.size}")
+    }
+    return NamespacedKey.fromString(arg) ?: throw ctx.newException("Invalid NamespacedKey: $arg")
 }
 
 @Suppress("FunctionName")
