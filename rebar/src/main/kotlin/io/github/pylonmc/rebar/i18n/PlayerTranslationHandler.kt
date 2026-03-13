@@ -6,6 +6,7 @@ import io.github.pylonmc.rebar.i18n.RebarTranslator.Companion.translate
 import io.github.pylonmc.rebar.item.RebarItem
 import io.github.pylonmc.rebar.util.editData
 import io.papermc.paper.datacomponent.DataComponentTypes
+import io.papermc.paper.datacomponent.item.ChargedProjectiles
 import io.papermc.paper.datacomponent.item.ItemLore
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.translation.GlobalTranslator
@@ -36,6 +37,14 @@ class PlayerTranslationHandler internal constructor(private val player: Player) 
                 }
                 ItemLore.lore(newLore)
             }
+        }
+
+        stack.editData(DataComponentTypes.CHARGED_PROJECTILES) { chargedProjectiles ->
+            val translated = chargedProjectiles.projectiles().map { projectile ->
+                handleItem(projectile)
+                projectile
+            }
+            ChargedProjectiles.chargedProjectiles(translated)
         }
     }
 }
