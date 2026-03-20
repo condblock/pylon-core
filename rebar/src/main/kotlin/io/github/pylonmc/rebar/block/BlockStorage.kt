@@ -1,9 +1,6 @@
 package io.github.pylonmc.rebar.block
 
 
-import com.github.shynixn.mccoroutine.bukkit.launch
-import com.github.shynixn.mccoroutine.bukkit.minecraftDispatcher
-import com.google.common.base.Preconditions
 import io.github.pylonmc.rebar.Rebar
 import io.github.pylonmc.rebar.addon.RebarAddon
 import io.github.pylonmc.rebar.block.BlockStorage.breakBlock
@@ -11,10 +8,11 @@ import io.github.pylonmc.rebar.block.base.RebarBreakHandler
 import io.github.pylonmc.rebar.block.context.BlockBreakContext
 import io.github.pylonmc.rebar.block.context.BlockCreateContext
 import io.github.pylonmc.rebar.config.RebarConfig
+import io.github.pylonmc.rebar.culling.BlockCullingEngine
 import io.github.pylonmc.rebar.datatypes.RebarSerializers
 import io.github.pylonmc.rebar.event.*
 import io.github.pylonmc.rebar.registry.RebarRegistry
-import io.github.pylonmc.rebar.culling.BlockCullingEngine
+import io.github.pylonmc.rebar.util.delayTicks
 import io.github.pylonmc.rebar.util.isFromAddon
 import io.github.pylonmc.rebar.util.position.BlockPosition
 import io.github.pylonmc.rebar.util.position.ChunkPosition
@@ -22,6 +20,7 @@ import io.github.pylonmc.rebar.util.position.position
 import io.github.pylonmc.rebar.util.rebarKey
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.bukkit.*
 import org.bukkit.block.Block
 import org.bukkit.entity.Item
@@ -35,7 +34,6 @@ import org.bukkit.persistence.PersistentDataType
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantReadWriteLock
-import kotlin.collections.mutableListOf
 import kotlin.random.Random
 
 /**
@@ -208,20 +206,29 @@ object BlockStorage : Listener {
         }
 
     /**
-     * Returns whether the block at [blockPosition] is a Rebar block, or null if the
-     * chunk at [blockPosition] is not loaded
+     * Returns whether the block at [blockPosition] is a Rebar block.
+     * Returns false if the chunk at [blockPosition] is not loaded.
      */
     @JvmStatic
     fun isRebarBlock(blockPosition: BlockPosition): Boolean =
         (blockPosition.chunk.isLoaded) && get(blockPosition) != null
 
     /**
-     * Returns whether the block at [block] is a Rebar block, or null if the
-     * chunk at [block] is not loaded
+     * Returns whether the block at [block] is a Rebar block.
+     * Returns false if the chunk at [blockPosition] is not loaded.
      */
     @JvmStatic
     fun isRebarBlock(block: Block): Boolean =
         (block.position.chunk.isLoaded) && get(block) != null
+
+    /**
+     * Returns whether the block at [location] is a Rebar block
+     * Returns false if the chunk at [blockPosition] is not loaded.
+     */
+    @JvmStatic
+    fun isRebarBlock(location: Location): Boolean =
+        (location.chunk.isLoaded) && get(location) != null
+
 
     /**
      * Creates a new Rebar block. Only call on the main thread.
@@ -512,7 +519,7 @@ object BlockStorage : Listener {
     }
 
     private fun save(chunk: Chunk, chunkBlocks: MutableList<RebarBlock>) {
-        val serializedBlocks = chunkBlocks.map {
+        val serializedBlocks = chunkBlocks.mapNotNull {
             RebarBlock.serialize(it, chunk.persistentDataContainer.adapterContext)
         }
 
@@ -532,7 +539,7 @@ object BlockStorage : Listener {
             }
 
             // autosaving
-            chunkAutosaveTasks[event.chunk.position] = Rebar.launch(Rebar.minecraftDispatcher) {
+            chunkAutosaveTasks[event.chunk.position] = Rebar.scope.launch {
 
                 // Wait a random delay before starting, this is to help smooth out lag from saving
                 delay(Random.nextLong(RebarConfig.BLOCK_DATA_AUTOSAVE_INTERVAL_SECONDS * 1000))
@@ -543,7 +550,7 @@ object BlockStorage : Listener {
                         check(blocksInChunk != null) { "Block autosave task was not cancelled properly" }
                         save(event.chunk, blocksInChunk)
                     }
-                    delay(RebarConfig.BLOCK_DATA_AUTOSAVE_INTERVAL_SECONDS * 1000)
+                    delayTicks(RebarConfig.BLOCK_DATA_AUTOSAVE_INTERVAL_SECONDS * 20)
                 }
             }
         }
@@ -591,11 +598,9 @@ object BlockStorage : Listener {
                 null
             } else if (block.schema.key.isFromAddon(addon)) {
                 RebarBlockSchema.schemaCache[block.block.position] = PhantomBlock.schema
-                PhantomBlock(
-                    RebarBlock.serialize(block, block.block.chunk.persistentDataContainer.adapterContext),
-                    block.schema.key,
-                    block.block
-                )
+                RebarBlock.serialize(block, block.block.chunk.persistentDataContainer.adapterContext)?.let { pdc ->
+                    PhantomBlock(pdc, block.schema.key, block.block)
+                }
             } else {
                 null
             }
@@ -625,17 +630,15 @@ object BlockStorage : Listener {
     internal fun makePhantom(block: RebarBlock) = lockBlockWrite {
         BlockCullingEngine.remove(block)
         RebarBlockSchema.schemaCache[block.block.position] = PhantomBlock.schema
-        val phantomBlock = PhantomBlock(
-            RebarBlock.serialize(block, block.block.chunk.persistentDataContainer.adapterContext),
-            block.schema.key,
-            block.block
-        )
+        val pdc = RebarBlock.serialize(block, block.block.chunk.persistentDataContainer.adapterContext) ?: return
+        val phantomBlock = PhantomBlock(pdc, block.schema.key, block.block)
 
         blocks.replace(block.block.position, block, phantomBlock)
         blocksByKey[block.key]!!.remove(block)
         blocksByKey.computeIfAbsent(phantomBlock.key) { mutableListOf() }.add(phantomBlock)
         blocksByChunk[block.block.chunk.position]!!.remove(block)
         blocksByChunk[phantomBlock.block.chunk.position]!!.add(phantomBlock)
+        Unit
     }
 
     @JvmSynthetic
