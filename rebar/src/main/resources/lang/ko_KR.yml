@@ -1,4 +1,4 @@
-addon: "Core"
+addon: "Rebar"
 
 item:
   error_item:
@@ -51,7 +51,7 @@ message:
     deleted_data: "<red>%type% <gray>(%location%) <red>제거됨 <gray>(%location%)"
 
   pipe:
-    connecting: "<insn>Right click</insn> <gray>to place, <insn>deselect the pipe item</insn> <gray>to cancel"
+    connecting: "<insn>오른쪽 클릭</insn><gray>으로 설치, <insn>파이프 아이템 선택 해제</insn><gray>로 취소"
     cannot_place_here: "<red>여기에 파이프를 놓을 수 없습니다"
     not_enough_pipes: "<red>파이프가 충분하지 않습니다"
     not_of_same_type: "<red>파이프의 종류가 다릅니다"
@@ -101,6 +101,7 @@ message:
     finishmultiblock:
       failed: "<red>멀티블록을 바라보고 있지 않습니다"
       success: "멀티블록 완성됨"
+    forceload: "청크 %x%, %z% 강제 로딩 중"
 
   waila:
     type-disabled: "<red>이 서버는 더 이상 이전에 설정한 %type% WAILA 표시 유형을 허용하지 않습니다. 기본값으로 재설정되었습니다."
@@ -116,7 +117,7 @@ gui:
     next: "다음 페이지 (%current%/%total%)"
     previous: "이전 페이지 (%current%/%total%)"
 
-  time_left: "남은 시간: %time%"
+  time_left: "<arrow> 남은 시간: %time%"
   input: "입력"
   output: "출력"
 
@@ -125,6 +126,8 @@ guide:
   button:
     back:
       name: "<yellow>뒤로"
+    item-recipes: "<white>조합법"
+    machine-recipes: "<white>기계를 사용하는 조합법"
     search-specifiers:
       name: "검색 지정자"
       lore: |-
@@ -410,7 +413,7 @@ guide:
 
   page:
     fluids: "유체"
-    info: "정보"
+    help: "도움말"
     researches: "연구"
     researches_addon: "%addon% 연구"
     research-items: "연구 아이템"
@@ -429,11 +432,13 @@ guide:
     tab:
       ingredients: "재료"
       byproducts: "부산물"
-    info_administrators: "관리자 정보"
+    help_administrators: "관리자 정보"
     contributors: "기여자"
     contributors_addon: "%addon% 기여자"
-    info_rebar: "리바 정보"
-    info_researching: "연구 정보"
+    help_rebar: "리바 정보"
+    help_researching: "연구 정보"
+    info: "정보"
+    machine_recipes: "기계 조합법"
 
 unit:
   prefix:
@@ -519,7 +524,7 @@ unit:
   blocks_per_second:
     singular: "블록/초"
     plural: "블록/초"
-    abbr: "블록/s"
+    abbr: "블록/초"
   chunks:
     singular: "청크"
     plural: "청크"
@@ -545,23 +550,23 @@ unit:
   buckets_per_second:
     singular: "양동이/초"
     plural: "양동이/초"
-    abbr: "B/s"
+    abbr: "B/초"
   days:
     singular: "일"
     plural: "일"
-    abbr: "d"
+    abbr: "일"
   hours:
     singular: "시간"
     plural: "시간"
-    abbr: "h"
+    abbr: "시"
   minutes:
     singular: "분"
     plural: "분"
-    abbr: "m"
+    abbr: "분"
   seconds:
     singular: "초"
     plural: "초"
-    abbr: "s"
+    abbr: "초"
   joules:
     singular: "줄"
     plural: "줄"
@@ -579,12 +584,15 @@ unit:
     plural: "경험치 포인트/초"
     abbr: "경험치 포인트/초"
   items:
-    singular: "아이템"
-    plural: "아이템"
+    singular: "개"
+    plural: "개"
   items_per_second:
-    singular: "아이템/초"
-    plural: "아이템/초"
-    abbr: "아이템/초"
+    singular: "개/초"
+    plural: "개/초"
+    abbr: "개/초"
+stacks:
+    singular: "스택"
+    plural: "스택"
   cycles_per_second:
     singular: "번/초"
     plural: "번/초"
