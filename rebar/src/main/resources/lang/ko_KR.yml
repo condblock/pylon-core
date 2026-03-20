@@ -590,7 +590,7 @@ unit:
     singular: "개/초"
     plural: "개/초"
     abbr: "개/초"
-stacks:
+  stacks:
     singular: "스택"
     plural: "스택"
   cycles_per_second:
