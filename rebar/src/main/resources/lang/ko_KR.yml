@@ -101,7 +101,7 @@ message:
     finishmultiblock:
       failed: "<red>멀티블록을 바라보고 있지 않습니다"
       success: "멀티블록 완성됨"
-    forceload: "청크 %x%, %z% 강제 로딩 중"
+    forceload: "청크 %x%, %z% 강제 로드 중"
 
   waila:
     type-disabled: "<red>이 서버는 더 이상 이전에 설정한 %type% WAILA 표시 유형을 허용하지 않습니다. 기본값으로 재설정되었습니다."
