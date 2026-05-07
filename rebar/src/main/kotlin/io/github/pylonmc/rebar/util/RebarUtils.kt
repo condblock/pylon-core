@@ -10,7 +10,7 @@ import io.github.pylonmc.rebar.config.ConfigSection
 import io.github.pylonmc.rebar.config.ContributorConfig
 import io.github.pylonmc.rebar.config.adapter.ConfigAdapter
 import io.github.pylonmc.rebar.item.RebarItem
-import io.github.pylonmc.rebar.item.builder.customMiniMessage
+import io.github.pylonmc.rebar.i18n.customMiniMessage
 import io.github.pylonmc.rebar.nms.NmsAccessor
 import io.github.pylonmc.rebar.registry.RebarRegistry
 import io.github.pylonmc.rebar.util.position.BlockPosition
@@ -429,6 +429,7 @@ val Player.pdc: PersistentDataContainer
  * @param warnMissing if set to true, the logger will warn if the resource in [from] is missing
  * @return The merged config
  */
+@JvmSynthetic
 internal fun mergeGlobalConfig(addon: RebarAddon, from: String, to: String, warnMissing: Boolean = true): Config {
     require(from.endsWith(".yml")) { "Config file must be a YAML file" }
     require(to.endsWith(".yml")) { "Config file must be a YAML file" }
@@ -458,6 +459,7 @@ internal fun mergeGlobalConfig(addon: RebarAddon, from: String, to: String, warn
 
 private val globalConfigCache: MutableMap<Pair<String, String>, Config> = mutableMapOf()
 
+@JvmSynthetic
 internal fun getContributors(addon: RebarAddon): List<ContributorConfig> {
     val cached = contributorsCache[addon]
     if (cached != null) {

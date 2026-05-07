@@ -9,7 +9,6 @@ import io.github.pylonmc.rebar.event.RebarRegisterEvent
 import io.github.pylonmc.rebar.event.RebarUnregisterEvent
 import io.github.pylonmc.rebar.i18n.RebarTranslator.Companion.translator
 import io.github.pylonmc.rebar.item.builder.ItemStackBuilder
-import io.github.pylonmc.rebar.item.builder.customMiniMessage
 import io.github.pylonmc.rebar.nms.NmsAccessor
 import io.github.pylonmc.rebar.registry.RebarRegistry
 import io.github.pylonmc.rebar.util.editData
@@ -204,8 +203,8 @@ class RebarTranslator private constructor(private val addon: RebarAddon) : Trans
                         // Potions are wacky wrt names, so we lie to the client about the type and set the model data
                         val oldStack = clone()
                         @Suppress("DEPRECATION")
-                        type = Material.GLASS_BOTTLE
-                        check(type == Material.GLASS_BOTTLE) { "ItemStack.setType no longer works" }
+                        type = Material.CLAY_BALL
+                        check(type == Material.CLAY_BALL) { "ItemStack.setType no longer works" }
                         copyDataFrom(oldStack) { true }
                         editData(DataComponentTypes.ITEM_MODEL) { oldStack.type.key }
                     }
