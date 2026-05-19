@@ -11,6 +11,9 @@ allowed-block-errors: 5
 # The number of errors a entity can throw before it is disabled
 allowed-entity-errors: 5
 
+# When a block or entity errors, should the full error stack trace be printed in the console or just the error message & context?
+full-error-stack-traces: true
+
 # The interval (in Minecraft ticks) between fluid network ticks
 fluid-tick-interval: 5
 
@@ -26,6 +29,17 @@ entity-data-autosave-interval-seconds: 60
 
 # The lowest tick interval at which Rebar inventory ticker items may tick
 inventory-ticker-base-rate: 10
+
+# The number of ticks between ghost blocks with multiple states changing to the next state
+ghost-block-tick-interval: 20
+
+confetti-creeper:
+  # The chance for a creeper to explode into confetti instead of a normal explosion, 0 = 0% chance, 1 = 100% chance
+  chance: 0.001
+  # How much confetti should a confetti creeper explode into
+  confetti-amount: 250
+  # How long the confetti should last in ticks before disappearing
+  confetti-lifetime: 600
 
 waila:
   # The interval (in Minecraft ticks), between WAILA checks

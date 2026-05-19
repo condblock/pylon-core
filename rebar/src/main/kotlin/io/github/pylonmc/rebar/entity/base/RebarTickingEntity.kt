@@ -1,7 +1,6 @@
 package io.github.pylonmc.rebar.entity.base
 
 import io.github.pylonmc.rebar.Rebar
-import io.github.pylonmc.rebar.async.BukkitMainThreadDispatcher
 import io.github.pylonmc.rebar.config.RebarConfig
 import io.github.pylonmc.rebar.entity.EntityListener
 import io.github.pylonmc.rebar.entity.RebarEntity
@@ -124,7 +123,7 @@ interface RebarTickingEntity {
         private fun startTicker(tickingEntity: RebarTickingEntity) {
             val dispatcher = dispatchers.getOrPut((tickingEntity as RebarEntity<*>).schema) {
                 if (tickingEntity.isAsync) Dispatchers.Default
-                else BukkitMainThreadDispatcher(Rebar, 1)
+                else Rebar.mainThreadDispatcher
             }
             tickingEntities[tickingEntity]?.job = Rebar.scope.launch(dispatcher) {
                 while (true) {
@@ -133,7 +132,7 @@ interface RebarTickingEntity {
                         tickingEntity.tick()
                     } catch (e: Exception) {
                         withContext(Rebar.mainThreadDispatcher) {
-                            EntityListener.logEventHandleErrTicking(e, tickingEntity as RebarEntity<*>)
+                            EntityListener.logTickingErr(e, tickingEntity as RebarEntity<*>)
                         }
                     }
                 }

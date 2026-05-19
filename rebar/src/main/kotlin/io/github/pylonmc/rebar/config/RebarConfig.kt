@@ -24,6 +24,12 @@ object RebarConfig {
     @JvmField
     val ALLOWED_ENTITY_ERRORS = config.getOrThrow("allowed-entity-errors", ConfigAdapter.INTEGER)
 
+    /**
+     * Mutable so that they can be disabled/enabled live for things like tests, etc.
+     */
+    @JvmField
+    var FULL_ERROR_STACK_TRACES = config.getOrThrow("full-error-stack-traces", ConfigAdapter.BOOLEAN)
+
     @JvmField
     val FLUID_TICK_INTERVAL = config.getOrThrow("fluid-tick-interval", ConfigAdapter.INTEGER)
 
@@ -59,6 +65,22 @@ object RebarConfig {
 
     @JvmField
     val CARGO_TRANSFER_RATE_MULTIPLIER = config.getOrThrow("cargo-transfer-rate-multiplier", ConfigAdapter.INTEGER)
+
+    @JvmField
+    val GHOST_BLOCK_TICK_INTERVAL = config.getOrThrow("ghost-block-tick-interval", ConfigAdapter.INTEGER)
+
+    object ConfettiCreeperConfig {
+
+        @JvmField
+        val CHANCE = config.getOrThrow("confetti-creeper.chance", ConfigAdapter.DOUBLE)
+
+        @JvmField
+        val AMOUNT = config.getOrThrow("confetti-creeper.confetti-amount", ConfigAdapter.INTEGER)
+
+        @JvmField
+        val LIFETIME = config.getOrThrow("confetti-creeper.confetti-lifetime", ConfigAdapter.INTEGER)
+
+    }
 
     object ResearchConfig {
 

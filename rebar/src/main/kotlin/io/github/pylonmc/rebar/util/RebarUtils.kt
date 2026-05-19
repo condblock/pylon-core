@@ -10,6 +10,7 @@ import io.github.pylonmc.rebar.config.ConfigSection
 import io.github.pylonmc.rebar.config.ContributorConfig
 import io.github.pylonmc.rebar.config.adapter.ConfigAdapter
 import io.github.pylonmc.rebar.item.RebarItem
+import io.github.pylonmc.rebar.item.RebarItemSchema
 import io.github.pylonmc.rebar.i18n.customMiniMessage
 import io.github.pylonmc.rebar.nms.NmsAccessor
 import io.github.pylonmc.rebar.registry.RebarRegistry
@@ -313,10 +314,10 @@ fun fromMiniMessage(string: String): Component = customMiniMessage.deserialize(s
  * @param targetItem The item to find. Items will be compared by their Rebar ID
  * @return The slot containing the item, or null if no item was found
  */
-fun findRebarItemInInventory(inventory: Inventory, targetItem: RebarItem): Int? {
+fun findRebarItemInInventory(inventory: Inventory, targetItem: RebarItemSchema): Int? {
     for (i in 0..<inventory.size) {
         val item = inventory.getItem(i)?.let {
-            RebarItem.fromStack(it)
+            RebarItemSchema.fromStack(it)
         }
         if (item == targetItem) {
             return i
@@ -327,8 +328,8 @@ fun findRebarItemInInventory(inventory: Inventory, targetItem: RebarItem): Int? 
 
 @JvmSynthetic
 inline fun <reified T> ItemStack?.isRebarAndIsNot(): Boolean {
-    val rebarItem = RebarItem.fromStack(this)
-    return rebarItem != null && rebarItem !is T
+    val schema = RebarItemSchema.fromStack(this)
+    return schema != null && !schema.isType(T::class.java)
 }
 
 @JvmSynthetic
@@ -562,12 +563,14 @@ fun findClosestDistanceBetweenLineAndPoint(p: Vector3f, p1: Vector3f, d1: Vector
 internal fun getTargetEntity(player: Player, maxDistanceBetweenRayAndEntity: Float): Entity? {
     val range = player.getAttribute(Attribute.ENTITY_INTERACTION_RANGE)!!.value
     val entities = player.getNearbyEntities(range, range, range)
+    val eyeLocation = player.eyeLocation.toVector().toVector3f()
+    val eyeDirection = player.eyeLocation.getDirection().toVector3f()
 
     for (entity in entities) {
         val distance = findClosestDistanceBetweenLineAndPoint(
             entity.location.toVector().toVector3f(),
-            player.eyeLocation.toVector().toVector3f(),
-            player.eyeLocation.getDirection().toVector3f()
+            eyeLocation,
+            eyeDirection
         )
         if (distance <= maxDistanceBetweenRayAndEntity) {
             return entity
@@ -628,3 +631,10 @@ suspend fun delayTicks(ticks: Long) = delay(ticks * 50)
  */
 @JvmSynthetic
 fun CoroutineContext.createChildContext(): CoroutineContext = this + Job(this[Job])
+
+/**
+ * @return Whether the entity has at least one tracking player, a tracking player is just a player who has & is receiving packets for the entity.
+ */
+fun Entity.hasTracker() = NmsAccessor.instance.hasTracker(this)
+
+const val FLUID_EPSILON = 1.0e-6

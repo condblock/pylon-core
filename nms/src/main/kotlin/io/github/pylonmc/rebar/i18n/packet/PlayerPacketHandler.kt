@@ -4,12 +4,10 @@ package io.github.pylonmc.rebar.i18n.packet
 
 import io.github.pylonmc.rebar.Rebar
 import io.github.pylonmc.rebar.i18n.PlayerTranslationHandler
-import io.github.pylonmc.rebar.item.RebarItem
-import io.github.pylonmc.rebar.util.editData
+import io.github.pylonmc.rebar.resourcepack.armor.ArmorTextureEngine
 import io.netty.channel.ChannelDuplexHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelPromise
-import io.papermc.paper.datacomponent.DataComponentTypes
 import net.minecraft.network.HashedPatchMap
 import net.minecraft.network.HashedStack
 import net.minecraft.network.protocol.Packet
@@ -19,9 +17,11 @@ import net.minecraft.network.syncher.SynchedEntityData
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.util.HashOps
 import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.ItemStackTemplate
 import net.minecraft.world.item.crafting.display.*
 import org.bukkit.craftbukkit.inventory.CraftItemStack
 import java.util.logging.Level
+import kotlin.jvm.optionals.getOrNull
 
 
 // Much inspiration has been taken from https://github.com/GuizhanCraft/SlimefunTranslation
@@ -85,7 +85,9 @@ class PlayerPacketHandler(private val player: ServerPlayer, val handler: PlayerT
                             handleRecipeDisplay(it.contents.display),
                             it.contents.group,
                             it.contents.category,
-                            it.contents.craftingRequirements
+                            it.contents.craftingRequirements.apply {
+                                getOrNull()?.forEach { ingredient -> ingredient.itemStacks()?.forEach { item -> translate(item) } }
+                            }
                         ),
                         it.flags
                     )
@@ -128,6 +130,12 @@ class PlayerPacketHandler(private val player: ServerPlayer, val handler: PlayerT
                 )
             }
 
+            is ClientboundSetEquipmentPacket -> packet.apply {
+                slots.forEach { slot ->
+                    translate(slot.second)
+                }
+            }
+
             else -> packet
         }
 
@@ -138,7 +146,7 @@ class PlayerPacketHandler(private val player: ServerPlayer, val handler: PlayerT
                 packet.stateId,
                 packet.slotNum,
                 packet.buttonNum,
-                packet.clickType,
+                packet.containerInput,
                 packet.changedSlots,
                 if (packet.changedSlots.size == 1) {
                     val slot = packet.changedSlots.keys.single()
@@ -151,11 +159,6 @@ class PlayerPacketHandler(private val player: ServerPlayer, val handler: PlayerT
                 } else {
                     HashedStack.create(player.containerMenu.carried, hashGenerator)
                 }
-            )
-
-            is ServerboundSetCreativeModeSlotPacket -> ServerboundSetCreativeModeSlotPacket(
-                packet.slotNum,
-                reset(packet.itemStack)
             )
 
             else -> packet
@@ -208,7 +211,7 @@ class PlayerPacketHandler(private val player: ServerPlayer, val handler: PlayerT
 
             is SlotDisplay.Composite -> SlotDisplay.Composite(display.contents.map(::handleSlotDisplay))
             is SlotDisplay.ItemStackSlotDisplay -> SlotDisplay.ItemStackSlotDisplay(
-                display.stack.copy().apply(::translate)
+                ItemStackTemplate.fromNonEmptyStack(display.stack.create().apply(::translate))
             )
 
             is SlotDisplay.SmithingTrimDemoSlotDisplay -> SlotDisplay.SmithingTrimDemoSlotDisplay(
@@ -239,39 +242,6 @@ class PlayerPacketHandler(private val player: ServerPlayer, val handler: PlayerT
                 e
             )
         }
-    }
-
-    // no, I have no idea what this does either
-    private fun reset(stack: ItemStack): ItemStack {
-        if (stack.isEmpty) return stack
-        val bukkitStack = CraftItemStack.asCraftMirror(stack)
-        val item = RebarItem.fromStack(bukkitStack) ?: return stack
-        val prototype = item.schema.getItemStack()
-        prototype.copyDataFrom(bukkitStack) { it != DataComponentTypes.ITEM_NAME && it != DataComponentTypes.LORE }
-        prototype.editPersistentDataContainer { it.remove(PlayerTranslationHandler.FOOTER_APPENDED) }
-        prototype.amount = bukkitStack.amount
-        val translatedPrototype = prototype.clone()
-        try {
-            handler.handleItem(translatedPrototype)
-        } catch (e: Throwable) {
-            Rebar.logger.log(
-                Level.SEVERE,
-                "An error occurred while handling item translations",
-                e
-            )
-            return stack
-        }
-        prototype.editData(DataComponentTypes.ITEM_NAME) {
-            val protoName = translatedPrototype.getData(DataComponentTypes.ITEM_NAME)!!
-            val newName = bukkitStack.getData(DataComponentTypes.ITEM_NAME)!!
-            if (protoName != newName) newName else it
-        }
-        prototype.editData(DataComponentTypes.LORE) {
-            val protoLore = translatedPrototype.getData(DataComponentTypes.LORE)!!
-            val newLore = bukkitStack.getData(DataComponentTypes.LORE)!!
-            if (protoLore != newLore) newLore else it
-        }
-        return CraftItemStack.unwrap(prototype)
     }
 
     companion object {

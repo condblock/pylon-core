@@ -1,11 +1,14 @@
 package io.github.pylonmc.rebar.nms
 
 import com.destroystokyo.paper.event.player.PlayerRecipeBookClickEvent
+import io.github.pylonmc.rebar.block.RebarBlock
+import io.github.pylonmc.rebar.entity.packet.BlockTextureEntity
 import io.github.pylonmc.rebar.i18n.PlayerTranslationHandler
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.block.Block
+import org.bukkit.entity.Entity
 import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.inventory.EquipmentSlot
@@ -33,6 +36,10 @@ interface NmsAccessor {
 
     fun resendInventory(player: Player)
 
+    fun resendEquipment(player: Player, entity: LivingEntity)
+
+    fun resendSlot(player: Player, slot: Int)
+
     fun resendRecipeBook(player: Player)
 
     fun serializePdc(pdc: PersistentDataContainer): Component
@@ -40,6 +47,10 @@ interface NmsAccessor {
     fun getStateProperties(block: Block, custom: Map<String, Pair<String, Int>> = mutableMapOf()): Map<String, String>
 
     fun handleRecipeBookClick(event: PlayerRecipeBookClickEvent)
+
+    fun hasTracker(entity: Entity): Boolean
+
+    fun createBlockTextureEntity(block: RebarBlock): BlockTextureEntity
 
     companion object {
         val instance = Class.forName("io.github.pylonmc.rebar.nms.NmsAccessorImpl")

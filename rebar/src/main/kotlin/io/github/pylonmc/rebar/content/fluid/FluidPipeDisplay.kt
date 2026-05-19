@@ -46,7 +46,7 @@ class FluidPipeDisplay : RebarEntity<ItemDisplay> {
 
         // will fail to load if schema not found; no way around this
         val pipeSchema = pdc.get(PIPE_KEY, PIPE_TYPE)!!
-        pipe = RebarItem.fromStack(pipeSchema.getItemStack()) as FluidPipe
+        this.pipe = pipeSchema.getRebarItem() as FluidPipe
 
         this.pipeAmount = pdc.get(PIPE_AMOUNT_KEY, RebarSerializers.INTEGER)!!
 
@@ -138,7 +138,7 @@ class FluidPipeDisplay : RebarEntity<ItemDisplay> {
                     .buildForItemDisplay()
                 )
                 .itemStack(ItemStackBuilder.of(pipe.material)
-                    .addCustomModelDataString("fluid_pipe_display:${pipe.key.key}")
+                    .addCustomModelDataString("fluid_pipe_display:${pipe.key}")
                     .addCustomModelDataString("fluid_pipe_length:${pipeAmount}")
                 )
                 .build(centerLocation)
