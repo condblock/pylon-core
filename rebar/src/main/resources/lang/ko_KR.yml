@@ -102,6 +102,14 @@ message:
       failed: "<red>멀티블록을 바라보고 있지 않습니다"
       success: "멀티블록 완성됨"
     forceload: "청크 %x%, %z% 강제 로드 중"
+    versions: |-
+      <gray>서버가 사용 중인 리바 상태:</gray>
+      <green>%server_implementation% <dark_green>%server_version%</dark_green> <gray>(API: %api_version%)</gray>
+      <green>리바 <dark_green>%rebar_version%</dark_green>
+      <green>Java <dark_green>%java_version%</dark_green>
+      
+      <gray>설치된 애드온:</gray> <dark_gray>(%addon_count%)</dark_gray>
+      %addon_list%
 
   waila:
     type-disabled: "<red>이 서버는 더 이상 이전에 설정한 %type% WAILA 표시 유형을 허용하지 않습니다. 기본값으로 재설정되었습니다."
@@ -126,6 +134,10 @@ guide:
   button:
     back:
       name: "<yellow>뒤로"
+      hints: |-
+        
+        <u>도움말</u>
+        <guidearrow> <guideinsn>쉬프트 왼쪽 클릭</guideinsn>으로 메인 메뉴로 이동
     item-recipes: "<white>조합법"
     machine-recipes: "<white>기계를 사용하는 조합법"
     search-specifiers:
@@ -377,7 +389,7 @@ guide:
         name: "<white>가이드 치트 조작"
         lore: |-
           <guidearrow> 관리자 권한으로 리바 가이드에서 치트 조작을 사용할 수 있습니다
-          <guidearrow> <guideinsn>아이템 버리기(Q)</guideinsn>로 리바 아이템을 한 개 얻습니다
+          <guidearrow> <guideinsn><key:key.drop></guideinsn>로 리바 아이템을 한 개 얻습니다
           <guidearrow> <guideinsn>마우스 휠 버튼 클릭</guideinsn>으로 리바 아이템을 한 스택 얻습니다
       rebar:
         name: "<white>리바란?"
