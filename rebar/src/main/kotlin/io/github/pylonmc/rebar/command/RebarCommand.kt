@@ -11,13 +11,14 @@ import com.mojang.brigadier.context.CommandContext
 import io.github.pylonmc.rebar.Rebar
 import io.github.pylonmc.rebar.addon.RebarAddon
 import io.github.pylonmc.rebar.block.BlockStorage
-import io.github.pylonmc.rebar.block.base.RebarSimpleMultiblock
 import io.github.pylonmc.rebar.block.context.BlockCreateContext
+import io.github.pylonmc.rebar.block.interfaces.SimpleRebarMultiblock
 import io.github.pylonmc.rebar.content.debug.DebugWaxedWeatheredCutCopperStairs
 import io.github.pylonmc.rebar.content.guide.RebarGuide
 import io.github.pylonmc.rebar.entity.display.transform.Rotation
 import io.github.pylonmc.rebar.gametest.GameTestConfig
 import io.github.pylonmc.rebar.i18n.RebarArgument
+import io.github.pylonmc.rebar.i18n.RebarTranslator.Companion.translator
 import io.github.pylonmc.rebar.i18n.customMiniMessage
 import io.github.pylonmc.rebar.item.ItemTypeWrapper
 import io.github.pylonmc.rebar.item.RebarItem
@@ -32,7 +33,7 @@ import io.github.pylonmc.rebar.recipe.RecipeType
 import io.github.pylonmc.rebar.registry.RebarRegistry
 import io.github.pylonmc.rebar.util.ConfettiParticle
 import io.github.pylonmc.rebar.util.blocksBetween
-import io.github.pylonmc.rebar.util.mergeGlobalConfig
+import io.github.pylonmc.rebar.util.mergeResource
 import io.github.pylonmc.rebar.util.position.BlockPosition
 import io.github.pylonmc.rebar.util.vanillaDisplayName
 import io.papermc.paper.ServerBuildInfo
@@ -60,11 +61,12 @@ import org.bukkit.command.CommandSender
 import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 import org.bukkit.inventory.EquipmentSlot
-import kotlin.math.min
 import org.bukkit.util.Vector
-import kotlin.collections.forEach
+import kotlin.math.min
 import kotlin.reflect.typeOf
 import io.papermc.paper.math.BlockPosition as PaperBlockPosition
+
+// IF MODIFYING COMMANDS, PLEASE ENSURE YOU UPDATE https://pylonmc.github.io/home/commands-and-permissions/ ACCORDINGLY
 
 private val guide = buildCommand("guide") {
     permission("rebar.command.guide")
@@ -504,7 +506,7 @@ private val exposeRecipeConfig = buildCommand("exposerecipeconfig") {
                     "exposerecipe.warning",
                     RebarArgument.of("file", "plugins/Rebar/${recipeType.filePath}")
                 )
-                mergeGlobalConfig(addon, recipeType.filePath, recipeType.filePath)
+                mergeResource(addon, Rebar, recipeType.filePath, recipeType.filePath)
             }
         }
     }
@@ -610,7 +612,7 @@ private val fillMultiblock = buildCommand("fillmultiblock") {
         RebarMetrics.onCommandRun("/rb fillmultiblock")
 
         val multiblock = player.getTargetBlockExact(5)?.let {
-            BlockStorage.getAs<RebarSimpleMultiblock>(it)
+            BlockStorage.getAs<SimpleRebarMultiblock>(it)
         }
         if (multiblock == null) {
             player.sendFeedback("fillmultiblock.not-looking")
@@ -629,7 +631,7 @@ private val fillMultiblock = buildCommand("fillmultiblock") {
 
         // fill sub-multiblocks (e.g. hatches)
         for ((position, block) in multiblock.components) {
-            BlockStorage.getAs<RebarSimpleMultiblock>(multiblock.getMultiblockBlock(position))?.let { subMultiblock ->
+            BlockStorage.getAs<SimpleRebarMultiblock>(multiblock.getMultiblockBlock(position))?.let { subMultiblock ->
                 for ((position, component) in subMultiblock.components) {
                     val block = subMultiblock.getMultiblockBlock(position)
                     if (!component.matches(block) && component.placeDefaultBlock(player, block)) {
@@ -647,29 +649,8 @@ private val fillMultiblock = buildCommand("fillmultiblock") {
     }
 }
 
-private val forceload = buildCommand("forceload") {
-    argument("radius", IntegerArgumentType.integer(1)) {
-        executesWithPlayer { player ->
-            RebarMetrics.onCommandRun("/rb forceload")
-            val radius = IntegerArgumentType.getInteger(this, "radius")
-            val center = player.location.chunk
-            for (x in -radius..radius) {
-                for (z in -radius..radius) {
-                    player.world.getChunkAt(center.x + x, center.z + z).isForceLoaded = true
-                    player.sendMessage(
-                        Component.translatable(
-                            "rebar.message.command.forceload",
-                            RebarArgument.of("x", center.x + x),
-                            RebarArgument.of("z", center.z + z)
-                        )
-                    )
-                }
-            }
-        }
-    }
-}
-
 private val versions = buildCommand("versions") {
+    permission("rebar.command.versions")
     executes { sender ->
         RebarMetrics.onCommandRun("/rb versions")
         val serverImplementation = Bukkit.getName()
@@ -701,6 +682,17 @@ private val versions = buildCommand("versions") {
     }
 }
 
+private val reloadlang = buildCommand("reloadlang") {
+    permission("rebar.command.reloadlang")
+    executes { sender ->
+        RebarMetrics.onCommandRun("/rb reloadlang")
+        for (addon in RebarRegistry.ADDONS) {
+            addon.translator.reload()
+        }
+        sender.sendFeedback("reloadlang.success")
+    }
+}
+
 @JvmSynthetic
 internal val ROOT_COMMAND = buildCommand("rebar") {
     permission("rebar.command.guide")
@@ -721,8 +713,8 @@ internal val ROOT_COMMAND = buildCommand("rebar") {
     then(exposeRecipeConfig)
     then(confetti)
     then(fillMultiblock)
-    then(forceload)
     then(versions)
+    then(reloadlang)
 }
 
 @JvmSynthetic

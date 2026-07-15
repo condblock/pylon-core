@@ -3,9 +3,8 @@ package io.github.pylonmc.rebar.item
 import io.github.pylonmc.rebar.Rebar
 import io.github.pylonmc.rebar.block.RebarBlock
 import io.github.pylonmc.rebar.block.context.BlockCreateContext
-import io.github.pylonmc.rebar.config.Config
-import io.github.pylonmc.rebar.config.RebarConfig
-import io.github.pylonmc.rebar.config.Settings
+import io.github.pylonmc.rebar.config.ConfigSection
+import io.github.pylonmc.rebar.config.adapter.ConfigAdapter
 import io.github.pylonmc.rebar.datatypes.RebarSerializers
 import io.github.pylonmc.rebar.entity.RebarEntity
 import io.github.pylonmc.rebar.i18n.RebarArgument
@@ -40,18 +39,41 @@ open class RebarItem(val stack: ItemStack) : Keyed {
      */
     val schema = RebarRegistry.ITEMS.getOrThrow(key)
 
-    val researchBypassPermission = schema.researchBypassPermission
     val addon = schema.addon
     val rebarBlock = schema.rebarBlockKey
-    val isDisabled = key in RebarConfig.DISABLED_ITEMS
+    val isDisabled = schema.isDisabled
     val research get() = schema.research
 
     /**
      * Returns settings associated with the item.
      *
-     * Shorthand for `Settings.get(getKey())`
+     * Shorthand for `ConfigSection.fromSettings(getKey())`
      */
-    fun getSettings() = Settings.get(key)
+    fun getSettings() = ConfigSection.fromSettings(key)
+
+    /**
+     * Shorthand for getSettings().get(...)
+     */
+    fun <T> getSetting(key: String, adapter: ConfigAdapter<T>)
+        = getSettings().get(key, adapter)
+
+    /**
+     * Shorthand for getSettings().get(...)
+     */
+    fun <T> getSetting(key: String, adapter: ConfigAdapter<T>, defaultValue: T)
+        = getSettings().get(key, adapter, defaultValue)
+
+    /**
+     * Shorthand for getSettings().get(...)
+     */
+    fun <T> getSetting(key: String, adapter: ConfigAdapter<T>, defaultValue: () -> T)
+        = getSettings().get(key, adapter, defaultValue)
+
+    /**
+     * Shorthand for getSettings().getOrThrow(...)
+     */
+    fun <T> getSettingOrThrow(key: String, adapter: ConfigAdapter<T>)
+        = getSettings().getOrThrow(key, adapter)
 
     override fun equals(other: Any?): Boolean = key == (other as? RebarItem)?.key
 
@@ -93,7 +115,7 @@ open class RebarItem(val stack: ItemStack) : Keyed {
 
             if (isNameValid) {
                 val translator = schema.addon.translator
-                for (locale in schema.addon.languages) {
+                for (locale in schema.addon.translator.languages) {
                     if (!translator.canTranslate(name!!.key(), locale)) {
                         Rebar.logger.warning(
                             "${schema.key.namespace} is missing a name translation key for item ${schema.key} (locale: ${locale.displayName} | expected translation key: ${
@@ -180,6 +202,56 @@ open class RebarItem(val stack: ItemStack) : Keyed {
         }
 
         /**
+         * Checks if [stack] is a Rebar item with the id [key].
+         */
+        @JvmStatic
+        @Contract("null -> false")
+        fun isRebarItem(stack: ItemStack?, key: NamespacedKey): Boolean {
+            val schema = RebarItemSchema.fromStack(stack) ?: return false
+            return schema.key == key
+        }
+
+        /**
+        * Checks if [stack] is a Rebar item with schema [schema].
+        */
+        @JvmStatic
+        @Contract("null -> false")
+        fun isRebarItem(stack: ItemStack?, schema: RebarItemSchema): Boolean {
+            val otherSchema = RebarItemSchema.fromStack(stack) ?: return false
+            return otherSchema === schema
+        }
+
+        /**
+         * Checks if [stack] is a Rebar item but not castable to [clazz].
+         */
+        @JvmStatic
+        @Contract("null -> false")
+        fun isRebarItemAndIsNot(stack: ItemStack?, clazz: Class<*>): Boolean {
+            val schema = RebarItemSchema.fromStack(stack) ?: return false
+            return !schema.isType(clazz)
+        }
+
+        /**
+         * Checks if [stack] is a Rebar item but not with the id [key].
+         */
+        @JvmStatic
+        @Contract("null -> false")
+        fun isRebarItemAndIsNot(stack: ItemStack?, key: NamespacedKey): Boolean {
+            val schema = RebarItemSchema.fromStack(stack) ?: return false
+            return schema.key != key
+        }
+
+        /**
+         * Checks if [stack] is a Rebar item but not with the schema [schema].
+         */
+        @JvmStatic
+        @Contract("null -> false")
+        fun isRebarItemAndIsNot(stack: ItemStack?, schema: RebarItemSchema): Boolean {
+            val otherSchema = RebarItemSchema.fromStack(stack) ?: return false
+            return otherSchema !== schema
+        }
+
+        /**
          * Suppresses warnings about missing/incorrect translation keys for the item name and lore
          * for the given item key
          */
@@ -187,8 +259,5 @@ open class RebarItem(val stack: ItemStack) : Keyed {
         fun suppressNameWarnings(key: NamespacedKey) {
             nameWarningsSuppressed.add(key)
         }
-
-        @JvmStatic
-        fun getSettings(key: NamespacedKey): Config = Settings.get(key)
     }
 }

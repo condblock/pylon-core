@@ -11,6 +11,7 @@ import io.github.pylonmc.rebar.resourcepack.armor.ArmorTextureEngine
 import io.github.pylonmc.rebar.util.editData
 import io.github.pylonmc.rebar.util.rebarKey
 import io.papermc.paper.datacomponent.DataComponentTypes
+import io.papermc.paper.datacomponent.item.BundleContents
 import io.papermc.paper.datacomponent.item.ChargedProjectiles
 import io.papermc.paper.datacomponent.item.ItemContainerContents
 import io.papermc.paper.datacomponent.item.ItemLore
@@ -22,12 +23,14 @@ import org.jetbrains.annotations.ApiStatus
 
 @ApiStatus.Internal
 class PlayerTranslationHandler internal constructor(private val player: Player) {
-    fun handleItem(stack: ItemStack) {
+    fun handleItem(stack: ItemStack?) {
+        if (stack == null || stack.isEmpty) return
+
         val rebarItem = RebarItem.fromStack(stack)
         val rebarFluid = RebarFluid.fromStack(stack)
         val placeholders = rebarItem?.getPlaceholders().orEmpty()
 
-        stack.translate(player.locale(), placeholders)
+        stack.translate(player, placeholders)
 
         if ((rebarItem != null || rebarFluid != null) && !stack.persistentDataContainer.has(FOOTER_APPENDED)) {
             stack.editData(DataComponentTypes.LORE) { lore ->
@@ -56,7 +59,8 @@ class PlayerTranslationHandler internal constructor(private val player: Player) 
         stack.editData(DataComponentTypes.CHARGED_PROJECTILES) { chargedProjectiles ->
             val translated = chargedProjectiles.projectiles().map { projectile ->
                 handleItem(projectile)
-                projectile
+                @Suppress("USELESS_ELVIS") // For some reason paper *does* pass null here instead of empty
+                projectile ?: ItemStack.empty()
             }
             ChargedProjectiles.chargedProjectiles(translated)
         }
@@ -64,9 +68,15 @@ class PlayerTranslationHandler internal constructor(private val player: Player) 
         stack.editData(DataComponentTypes.CONTAINER) { container ->
             val translated = container.contents().map { item ->
                 handleItem(item)
-                item
+                @Suppress("USELESS_ELVIS") // For some reason paper *does* pass null here instead of empty
+                item ?: ItemStack.empty()
             }
             ItemContainerContents.containerContents(translated)
+        }
+
+        stack.editData(DataComponentTypes.BUNDLE_CONTENTS) { bundleContents ->
+            val translated = bundleContents.contents().map { it.apply { handleItem(this) } }
+            BundleContents.bundleContents(translated)
         }
 
         ArmorTextureEngine.handleItem(player, stack)
@@ -92,6 +102,11 @@ class PlayerTranslationHandler internal constructor(private val player: Player) 
                     item
                 }
                 ItemContainerContents.containerContents(translated)
+            }
+
+            stack.editData(DataComponentTypes.BUNDLE_CONTENTS) { bundleContents ->
+                val translated = bundleContents.contents().map { it.apply { resetItem(this) } }
+                BundleContents.bundleContents(translated)
             }
 
             stack.editPersistentDataContainer {

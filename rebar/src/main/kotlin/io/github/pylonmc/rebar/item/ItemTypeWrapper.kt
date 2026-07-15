@@ -1,6 +1,7 @@
 package io.github.pylonmc.rebar.item
 
 import io.github.pylonmc.rebar.registry.RebarRegistry
+import io.papermc.paper.datacomponent.item.attribute.AttributeModifierDisplay.override
 import org.bukkit.*
 import org.bukkit.inventory.ItemStack
 
@@ -8,6 +9,8 @@ import org.bukkit.inventory.ItemStack
  * Allows the representation of both vanilla and Rebar items in a unified way.
  */
 sealed interface ItemTypeWrapper : Keyed {
+
+    fun matches(itemStack: ItemStack?): Boolean
 
     fun createItemStack() = createItemStack(1)
 
@@ -18,7 +21,8 @@ sealed interface ItemTypeWrapper : Keyed {
      */
     @JvmRecord
     data class Vanilla(val material: Material) : ItemTypeWrapper {
-        override fun createItemStack(count: Int) = ItemStack(material, count)
+        override fun matches(itemStack: ItemStack?) = itemStack?.type == material && !RebarItem.isRebarItem(itemStack)
+        override fun createItemStack(count: Int) = ItemStack.of(material, count)
         override fun getKey() = material.key
     }
 
@@ -27,11 +31,15 @@ sealed interface ItemTypeWrapper : Keyed {
      */
     @JvmRecord
     data class Rebar(val item: RebarItemSchema) : ItemTypeWrapper {
+        override fun matches(itemStack: ItemStack?) = RebarItem.isRebarItem(itemStack, item)
         override fun createItemStack(count: Int) = item.getItemStack(count)
         override fun getKey() = item.key
     }
 
     companion object {
+        @JvmStatic
+        val AIR = ItemTypeWrapper(Material.AIR)
+
         @JvmStatic
         @JvmName("of")
         operator fun invoke(stack: ItemStack): ItemTypeWrapper {

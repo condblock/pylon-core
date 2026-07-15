@@ -164,13 +164,14 @@ internal object RebarItemListener : Listener {
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     private fun handle(event: PlayerPickBlockEvent) {
+        val player = event.player
         val rebarBlock = BlockStorage.get(event.block) ?: return
-        val blockItem = rebarBlock.getPickItem() ?: return
+        val blockItem = rebarBlock.getPickItem(player) ?: return
         val blockSchema = RebarItemSchema.fromStack(blockItem) ?: return
 
         val sourceSlot = event.sourceSlot
         if (sourceSlot != -1) {
-            val sourceItem = event.player.inventory.getItem(event.sourceSlot)
+            val sourceItem = player.inventory.getItem(event.sourceSlot)
             if (sourceItem != null) {
                 val sourceSchema = RebarItemSchema.fromStack(sourceItem)
                 if (sourceSchema == blockSchema) {
@@ -182,7 +183,7 @@ internal object RebarItemListener : Listener {
 
         // If we reach this point, the source item is not of the correct type
         // So we're going to search the inventory for a block of the correct type
-        val existingSlot = event.player.inventory.findRebar(blockSchema)
+        val existingSlot = player.inventory.findRebar(blockSchema)
         if (existingSlot != null) {
             // If we find one, we'll set the source to that slot
             event.sourceSlot = existingSlot
@@ -194,15 +195,15 @@ internal object RebarItemListener : Listener {
         }
 
         // Otherwise, we'll just attempt to add a new item and set the source to be that item
-        if (event.player.gameMode == GameMode.CREATIVE) {
-            if (event.player.inventory.addItem(blockItem).isNotEmpty()) {
+        if (player.gameMode == GameMode.CREATIVE) {
+            if (player.inventory.addItem(blockItem).isNotEmpty()) {
                 // Inventory full, can't pick the item
                 event.isCancelled = true
                 return
             }
         }
 
-        val newSourceSlot = event.player.inventory.findRebar(blockSchema)
+        val newSourceSlot = player.inventory.findRebar(blockSchema)
         if (newSourceSlot == null) {
             // should never happen but you never know
             event.isCancelled = true
@@ -210,18 +211,19 @@ internal object RebarItemListener : Listener {
         }
 
         event.sourceSlot = newSourceSlot
-        event.targetSlot = event.player.inventory.heldItemSlot
+        event.targetSlot = player.inventory.heldItemSlot
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     internal fun handle(event: PlayerPickEntityEvent) {
+        val player = event.player
         val rebarEntity = EntityStorage.get(event.entity) ?: return
-        val entityItem = rebarEntity.getPickItem() ?: return
+        val entityItem = rebarEntity.getPickItem(player) ?: return
         val entityItemType = ItemTypeWrapper(entityItem)
 
         val sourceSlot = event.sourceSlot
         if (sourceSlot != -1) {
-            val sourceItem = event.player.inventory.getItem(event.sourceSlot)
+            val sourceItem = player.inventory.getItem(event.sourceSlot)
             if (sourceItem != null && sourceItem.isSimilar(entityItem)) {
                 // The source item is already correct
                 return
@@ -230,7 +232,7 @@ internal object RebarItemListener : Listener {
 
         // If we reach this point, the source item is not of the correct type
         // So we're going to search the inventory for a block of the correct type
-        val existingSlot = event.player.inventory.findType(entityItemType)
+        val existingSlot = player.inventory.findType(entityItemType)
         if (existingSlot != null) {
             // If we find one, we'll set the source to that slot
             event.sourceSlot = existingSlot
@@ -242,15 +244,15 @@ internal object RebarItemListener : Listener {
         }
 
         // Otherwise, we'll just attempt to add a new item and set the source to be that item
-        if (event.player.gameMode == GameMode.CREATIVE) {
-            if (event.player.inventory.addItem(entityItem).isNotEmpty()) {
+        if (player.gameMode == GameMode.CREATIVE) {
+            if (player.inventory.addItem(entityItem).isNotEmpty()) {
                 // Inventory full, can't pick the item
                 event.isCancelled = true
                 return
             }
         }
 
-        val newSourceSlot = event.player.inventory.findType(entityItemType)
+        val newSourceSlot = player.inventory.findType(entityItemType)
         if (newSourceSlot == null) {
             // should never happen but you never know
             event.isCancelled = true
@@ -258,7 +260,7 @@ internal object RebarItemListener : Listener {
         }
 
         event.sourceSlot = newSourceSlot
-        event.targetSlot = event.player.inventory.heldItemSlot
+        event.targetSlot = player.inventory.heldItemSlot
     }
 
     @JvmSynthetic

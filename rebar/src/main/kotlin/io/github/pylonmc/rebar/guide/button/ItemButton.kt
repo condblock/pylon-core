@@ -1,16 +1,20 @@
 package io.github.pylonmc.rebar.guide.button
 
+import io.github.pylonmc.rebar.config.RebarConfig
 import io.github.pylonmc.rebar.guide.pages.item.ItemRecipesPage
 import io.github.pylonmc.rebar.guide.pages.item.ItemUsagesPage
 import io.github.pylonmc.rebar.guide.pages.research.ResearchItemsPage
 import io.github.pylonmc.rebar.i18n.RebarArgument
-import io.github.pylonmc.rebar.item.RebarItem
+import io.github.pylonmc.rebar.item.ItemTypeWrapper
+import io.github.pylonmc.rebar.item.RebarItemSchema
 import io.github.pylonmc.rebar.item.builder.ItemStackBuilder
 import io.github.pylonmc.rebar.item.research.Research.Companion.canCraft
 import io.github.pylonmc.rebar.item.research.Research.Companion.canUse
-import io.github.pylonmc.rebar.item.research.Research.Companion.guideHints
+import io.github.pylonmc.rebar.content.guide.RebarGuide.Companion.guideHints
+import io.github.pylonmc.rebar.content.guide.RebarGuide.Companion.playGuideSound
 import io.github.pylonmc.rebar.item.research.Research.Companion.researchPoints
-import io.github.pylonmc.rebar.recipe.RecipeInput
+import io.github.pylonmc.rebar.recipe.ingredient.FluidOrItem
+import io.github.pylonmc.rebar.recipe.ingredient.ItemChoice
 import io.github.pylonmc.rebar.util.gui.unit.UnitFormat
 import io.papermc.paper.datacomponent.DataComponentTypes
 import net.kyori.adventure.text.Component
@@ -20,7 +24,6 @@ import org.bukkit.Registry
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.ClickType
 import org.bukkit.inventory.ItemStack
-import org.bukkit.inventory.RecipeChoice
 import xyz.xenondevs.invui.Click
 import xyz.xenondevs.invui.gui.SlotElement
 import xyz.xenondevs.invui.gui.get
@@ -34,26 +37,14 @@ import xyz.xenondevs.invui.item.ItemProvider
  * @param stacks The items to display. If multiple are provided, the button will automatically
  * cycle through all of them. You must supply at least one item
  */
-class ItemButton @JvmOverloads constructor(
+class ItemButton private constructor(
     stacks: List<ItemStack>,
 
     /**
      * A function to apply to the button item after creating it.
      */
-    val preDisplayDecorator: (ItemStack, Player) -> ItemStack = { stack, _ -> stack }
+    val preDisplayDecorator: Decorator = noDecorator
 ) : AbstractBoundItem() {
-
-    /**
-     * @param stacks The items to display. If multiple are provided, the button will automatically
-     * cycle through all of them. You must supply at least one item
-     */
-    constructor(vararg stacks: ItemStack) : this(stacks.toList())
-
-    /**
-     * @param stack The item to display
-     * @param preDisplayDecorator A function to apply to the button item after creating it
-     */
-    constructor(stack: ItemStack, preDisplayDecorator: (ItemStack, Player) -> ItemStack) : this(listOf(stack), preDisplayDecorator)
 
     val stacks = stacks.shuffled()
     val currentStack: ItemStack
@@ -69,18 +60,18 @@ class ItemButton @JvmOverloads constructor(
     override fun getItemProvider(player: Player): ItemProvider {
         try {
             val displayStack = preDisplayDecorator.invoke(currentStack.clone(), player)
-            val item = RebarItem.fromStack(displayStack) ?: return ItemStackBuilder.of(displayStack)
+            val itemSchema = RebarItemSchema.fromStack(displayStack) ?: return ItemStackBuilder.of(displayStack)
 
             val builder = ItemStackBuilder.of(displayStack)
-            if (item.isDisabled) {
+            if (itemSchema.isDisabled) {
                 builder.set(DataComponentTypes.ITEM_MODEL, Material.STRUCTURE_VOID.key)
             }
 
-            if (!player.canCraft(item, respectBypass = false)) {
+            if (!player.canCraft(itemSchema)) {
                 builder.set(DataComponentTypes.ITEM_MODEL, Material.BARRIER.key)
                     .set(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, false)
 
-                val research = item.research
+                val research = itemSchema.research
                 if (research != null) {
                     val loreLine = if (research.cost != null) {
                         val playerPoints = player.researchPoints
@@ -92,7 +83,12 @@ class ItemButton @JvmOverloads constructor(
                             RebarArgument.of("unlock_cost", UnitFormat.RESEARCH_POINTS.format(research.cost))
                         )
                     } else {
-                        Component.translatable("rebar.guide.button.item.not-researched")
+                        // Null-cost research uses a custom unlock flow defined by the addon.
+                        // Delegate to the addon's unlock-instructions key, mirroring
+                        // ResearchButton's handling of the same case.
+                        Component.translatable(
+                            "${research.key.namespace}.researches.${research.key.key}.unlock-instructions"
+                        )
                     }
 
                     val lore = builder.lore()?.lines()?.toMutableList() ?: mutableListOf()
@@ -103,7 +99,7 @@ class ItemButton @JvmOverloads constructor(
             }
 
             if (player.guideHints) {
-                if (!player.canCraft(item, respectBypass = false)) {
+                if (!player.canCraft(itemSchema)) {
                     builder.lore(Component.translatable("rebar.guide.button.item.hints.unresearched"))
                 }
             }
@@ -123,13 +119,14 @@ class ItemButton @JvmOverloads constructor(
                     val page = ItemRecipesPage(currentStack)
                     if (page.pages.isNotEmpty()) {
                         page.open(player)
+                        player.playGuideSound(RebarConfig.GuideConfig.CLICK_BUTTON_SOUND)
                     }
                 }
 
                 ClickType.SHIFT_LEFT -> {
-                    val item = RebarItem.fromStack(currentStack)
-                    val research = item?.research
-                    if (item != null && research != null) {
+                    val itemSchema = RebarItemSchema.fromStack(currentStack)
+                    val research = itemSchema?.research
+                    if (itemSchema != null && research != null) {
                         if (research.isResearchedBy(player) || research.cost == null || research.cost > player.researchPoints) {
                             return
                         }
@@ -141,6 +138,7 @@ class ItemButton @JvmOverloads constructor(
                                 item.item.notifyWindows()
                             }
                         }
+                        player.playGuideSound(RebarConfig.GuideConfig.CLICK_BUTTON_SOUND)
                     }
                 }
 
@@ -148,13 +146,15 @@ class ItemButton @JvmOverloads constructor(
                     val page = ItemUsagesPage(currentStack)
                     if (page.pages.isNotEmpty()) {
                         page.open(player)
+                        player.playGuideSound(RebarConfig.GuideConfig.CLICK_BUTTON_SOUND)
                     }
                 }
 
                 ClickType.SHIFT_RIGHT -> {
-                    val item = RebarItem.fromStack(currentStack)
-                    if (item != null && item.research != null && !player.canUse(item)) {
-                        ResearchItemsPage(item.research!!).open(player)
+                    val itemSchema = RebarItemSchema.fromStack(currentStack)
+                    if (itemSchema != null && itemSchema.research != null && !player.canUse(itemSchema)) {
+                        ResearchItemsPage(itemSchema.research!!).open(player)
+                        player.playGuideSound(RebarConfig.GuideConfig.CLICK_BUTTON_SOUND)
                     }
                 }
 
@@ -163,6 +163,7 @@ class ItemButton @JvmOverloads constructor(
                     val stack = getCheatItemStack(currentStack, click)
                     stack.amount = stack.maxStackSize
                     player.setItemOnCursor(stack)
+                    player.playGuideSound(RebarConfig.GuideConfig.CLICK_BUTTON_SOUND)
                 }
 
                 ClickType.DROP -> {
@@ -171,8 +172,10 @@ class ItemButton @JvmOverloads constructor(
                     stack.amount = 1
                     if (player.itemOnCursor.isEmpty) {
                         player.setItemOnCursor(stack)
+                        player.playGuideSound(RebarConfig.GuideConfig.CLICK_BUTTON_SOUND)
                     } else if (player.itemOnCursor.isSimilar(stack)) {
                         player.itemOnCursor.add()
+                        player.playGuideSound(RebarConfig.GuideConfig.CLICK_BUTTON_SOUND)
                     }
                 }
 
@@ -181,6 +184,7 @@ class ItemButton @JvmOverloads constructor(
                     val stack = getCheatItemStack(currentStack, click)
                     stack.amount = stack.maxStackSize
                     player.dropItem(stack)
+                    player.playGuideSound(RebarConfig.GuideConfig.CLICK_BUTTON_SOUND)
                 }
 
                 ClickType.SWAP_OFFHAND -> {
@@ -188,6 +192,7 @@ class ItemButton @JvmOverloads constructor(
                     val stack = getCheatItemStack(currentStack, click)
                     stack.amount = 1
                     player.give(stack)
+                    player.playGuideSound(RebarConfig.GuideConfig.CLICK_BUTTON_SOUND)
                 }
 
                 else -> {}
@@ -197,76 +202,70 @@ class ItemButton @JvmOverloads constructor(
         }
     }
 
-    companion object {
-        private fun getCheatItemStack(currentStack: ItemStack, click: Click): ItemStack {
-            val clonedUnknown = currentStack.clone()
-            val rebarItem = RebarItem.fromStack(clonedUnknown)
+    fun hasItemType(itemTypeWrapper: ItemTypeWrapper): Boolean {
+        for (stack in stacks) {
+            if (itemTypeWrapper.matches(stack)) {
+                return true
+            }
+        }
+        return false
+    }
 
-            if (rebarItem == null) {
+    companion object {
+        private typealias Decorator = (ItemStack, Player) -> ItemStack
+        private val noDecorator: Decorator = { stack, _ -> stack }
+
+        @Suppress("UnstableApiUsage")
+        private fun getCheatItemStack(currentStack: ItemStack, click: Click): ItemStack {
+            val itemSchema = RebarItemSchema.fromStack(currentStack)
+            if (itemSchema == null) {
                 // Item is not Rebar
-                val type = Registry.MATERIAL.get(clonedUnknown.type.key)!!
-                val amount = if (click.clickType.isShiftClick) { type.maxStackSize } else { 1 }
-                val clonedNotRebar = ItemStack(type, amount)
+                val type = Registry.MATERIAL.get(currentStack.type.key)!!
+                val amount = if (click.clickType.isShiftClick) type.maxStackSize else 1
+                val clonedNotRebar = ItemStack.of(type, amount)
+                clonedNotRebar.copyDataFrom(currentStack) {
+                    it != DataComponentTypes.ITEM_NAME && it != DataComponentTypes.LORE
+                }
                 return clonedNotRebar
             } else {
                 // Rebar item handling
-                val clonedRebar = rebarItem.schema.getItemStack()
-                clonedRebar.amount = if (click.clickType.isShiftClick) { clonedRebar.maxStackSize } else { 1 }
+                val amount = if (click.clickType.isShiftClick) 99 else 1 // the schema will automatically cap the amount to the max stack size
+                val clonedRebar = itemSchema.getItemStack(amount)
                 return clonedRebar
             }
         }
 
         @JvmStatic
-        fun of(stack: ItemStack?): Item {
-            if (stack == null) {
+        @JvmOverloads
+        fun of(stack: ItemStack?, preDisplayDecorator: Decorator? = null): Item {
+            if (stack == null || stack.isEmpty) {
                 return EMPTY
             }
 
-            return ItemButton(stack)
+            return ItemButton(listOf(stack), preDisplayDecorator ?: noDecorator)
         }
 
         @JvmStatic
-        fun of(stack: ItemStack?, preDisplayDecorator: (ItemStack, Player) -> ItemStack): Item {
-            if (stack == null) {
-                return EMPTY
-            }
-
-            return ItemButton(listOf(stack), preDisplayDecorator)
-        }
+        @JvmOverloads
+        fun of(choice: ItemChoice?, preDisplayDecorator: Decorator? = null) = of(choice?.representativeItems, preDisplayDecorator)
 
         @JvmStatic
-        fun of(input: RecipeInput.Item?): Item {
-            if (input == null) {
-                return EMPTY
-            }
-
-            return ItemButton(*input.representativeItems.toTypedArray())
-        }
-
-        @JvmStatic
-        fun of(choice: RecipeChoice?): Item = when (choice) {
-            is RecipeChoice.MaterialChoice -> ItemButton(choice.choices.map(::ItemStack))
-            is RecipeChoice.ExactChoice -> ItemButton(choice.choices)
-            else -> EMPTY
-        }
+        @JvmOverloads
+        fun of(fluidOrItem: FluidOrItem.Item?, preDisplayDecorator: Decorator? = null) = of(fluidOrItem?.item, preDisplayDecorator)
 
         @JvmStatic @JvmOverloads
-        fun of(stacks: List<ItemStack>, preDisplayDecorator: (ItemStack, Player) -> ItemStack = { stack, _ -> stack })
-                = ItemButton(stacks, preDisplayDecorator)
-        /**
-         * @param stacks The items to display. If multiple are provided, the button will automatically
-         * cycle through all of them. You must supply at least one item
-         */
-        @JvmStatic
-        fun of(vararg stacks: ItemStack)
-                = ItemButton(stacks.toList())
+        fun of(stacks: List<ItemStack?>?, preDisplayDecorator: Decorator? = null) = if (stacks == null || stacks.filterNotNull().isEmpty()) {
+            EMPTY
+        } else {
+            ItemButton(stacks.filterNotNull(), preDisplayDecorator ?: noDecorator)
+        }
 
         /**
-         * @param stack The item to display
-         * @param preDisplayDecorator A function to apply to the button item after creating it
+         * @param stacks The items to display. If multiple are provided, the button will automatically
+         * cycle through all of them. (if no items are provided, returns an empty item)
          */
         @JvmStatic
-        fun of(stack: ItemStack, preDisplayDecorator: (ItemStack, Player) -> ItemStack)
-                = ItemButton(stack, preDisplayDecorator)
+        @JvmOverloads
+        fun of(preDisplayDecorator: Decorator? = null, vararg stacks: ItemStack?) = of(stacks.toList(), preDisplayDecorator)
     }
 }

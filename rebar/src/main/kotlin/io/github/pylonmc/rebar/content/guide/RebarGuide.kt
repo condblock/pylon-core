@@ -2,6 +2,7 @@ package io.github.pylonmc.rebar.content.guide
 
 import io.github.pylonmc.rebar.addon.RebarAddon
 import io.github.pylonmc.rebar.config.RebarConfig
+import io.github.pylonmc.rebar.datatypes.RebarSerializers
 import io.github.pylonmc.rebar.event.api.annotation.MultiHandler
 import io.github.pylonmc.rebar.guide.button.BackButton
 import io.github.pylonmc.rebar.guide.button.FluidButton
@@ -19,15 +20,19 @@ import io.github.pylonmc.rebar.guide.pages.research.ResearchItemsPage
 import io.github.pylonmc.rebar.guide.pages.research.ResearchesPage
 import io.github.pylonmc.rebar.guide.pages.settings.MainSettingsPage
 import io.github.pylonmc.rebar.item.RebarItem
-import io.github.pylonmc.rebar.item.base.RebarInteractor
 import io.github.pylonmc.rebar.item.builder.ItemStackBuilder
+import io.github.pylonmc.rebar.item.interfaces.InteractRebarItemHandler
 import io.github.pylonmc.rebar.item.research.Research
-import io.github.pylonmc.rebar.recipe.FluidOrItem
+import io.github.pylonmc.rebar.recipe.ingredient.FluidOrItem
 import io.github.pylonmc.rebar.registry.RebarRegistry
+import io.github.pylonmc.rebar.util.RandomizedSound
+import io.github.pylonmc.rebar.util.findRebar
 import io.github.pylonmc.rebar.util.gui.GuiItems
+import io.github.pylonmc.rebar.util.persistentData
 import io.github.pylonmc.rebar.util.rebarKey
 import io.papermc.paper.datacomponent.DataComponentTypes
 import net.kyori.adventure.key.Key
+import net.kyori.adventure.sound.Sound
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
@@ -44,20 +49,24 @@ import java.util.UUID
 /**
  * The one and only Rebar guide.
  */
-class RebarGuide(stack: ItemStack) : RebarItem(stack), RebarInteractor {
+class RebarGuide(stack: ItemStack) : RebarItem(stack), InteractRebarItemHandler {
 
     @MultiHandler(priorities = [EventPriority.NORMAL, EventPriority.MONITOR])
-    override fun onUsedToClick(event: PlayerInteractEvent, priority: EventPriority) {
+    override fun onInteract(event: PlayerInteractEvent, priority: EventPriority) {
         if (!event.action.isRightClick || event.useItemInHand() == Event.Result.DENY) return
 
         if (priority == EventPriority.NORMAL) {
             event.setUseInteractedBlock(Event.Result.DENY)
         } else {
             open(event.player)
+            event.player.playGuideSound(RebarConfig.GuideConfig.OPEN_SOUND)
         }
     }
 
     companion object : Listener {
+
+        private val guideHintsKey = rebarKey("guide_hints")
+        private val guideSoundsKey = rebarKey("guide_sounds")
 
         @JvmField
         val KEY = rebarKey("guide")
@@ -107,7 +116,7 @@ class RebarGuide(stack: ItemStack) : RebarItem(stack), RebarInteractor {
             rebarKey("fluids"),
             {
                 RebarRegistry.FLUIDS.filter { it.key !in hiddenFluids }
-                    .map { FluidButton(it) }
+                    .map { FluidButton.of(it) }
                     .toMutableList()
             }
         ) {}
@@ -154,14 +163,34 @@ class RebarGuide(stack: ItemStack) : RebarItem(stack), RebarInteractor {
         @JvmStatic
         val mainSettingsButton = PageButton(Material.COMPARATOR, mainSettingsPage)
 
+        @JvmStatic
+        var Player.guideHints: Boolean by persistentData(guideHintsKey, RebarSerializers.BOOLEAN, true)
+
+        @JvmStatic
+        var Player.guideSounds: Boolean by persistentData(guideSoundsKey, RebarSerializers.BOOLEAN, true)
+
+        @JvmStatic
+        @JvmOverloads
+        fun Player.playGuideSound(sound: RandomizedSound, emitter: Sound.Emitter? = null)
+            = playGuideSound(sound.create(), emitter)
+
+        @JvmStatic
+        @JvmOverloads
+        fun Player.playGuideSound(sound: Sound, emitter: Sound.Emitter? = null) = if (guideSounds) {
+            if (emitter != null) playSound(sound, emitter) else playSound(sound)
+        } else {
+            Unit
+        }
+
         /**
          * Lowest priority to avoid another plugin saving the players data or doing something
          * to make the player considered as having played before, before we receive the event
          */
         @EventHandler(priority = EventPriority.LOWEST)
         private fun join(event: PlayerJoinEvent) {
-            if (RebarConfig.REBAR_GUIDE_ON_FIRST_JOIN && !event.player.hasPlayedBefore()) {
-                event.player.give(STACK.clone())
+            val player = event.player
+            if (RebarConfig.GuideConfig.GIVE_ON_FIRST_JOIN && !player.hasPlayedBefore() && player.inventory.findRebar(KEY) == null) {
+                player.give(STACK.clone())
             }
         }
 

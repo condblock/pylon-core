@@ -3,14 +3,14 @@ package io.github.pylonmc.rebar.block
 import io.github.pylonmc.rebar.Rebar
 import io.github.pylonmc.rebar.block.RebarBlock.Companion.rebarBlockTextureEntityKey
 import io.github.pylonmc.rebar.block.RebarBlock.Companion.register
-import io.github.pylonmc.rebar.block.base.RebarDirectionalBlock
-import io.github.pylonmc.rebar.block.base.RebarEntityHolderBlock
-import io.github.pylonmc.rebar.block.base.RebarInventoryBlock
+import io.github.pylonmc.rebar.block.interfaces.DirectionalRebarBlock
+import io.github.pylonmc.rebar.block.interfaces.EntityHolderRebarBlock
+import io.github.pylonmc.rebar.block.interfaces.GuiRebarBlock
 import io.github.pylonmc.rebar.block.context.BlockBreakContext
 import io.github.pylonmc.rebar.block.context.BlockCreateContext
-import io.github.pylonmc.rebar.config.Config
+import io.github.pylonmc.rebar.config.ConfigSection
 import io.github.pylonmc.rebar.config.RebarConfig
-import io.github.pylonmc.rebar.config.Settings
+import io.github.pylonmc.rebar.config.adapter.ConfigAdapter
 import io.github.pylonmc.rebar.content.debug.DebugWaxedWeatheredCutCopperStairs
 import io.github.pylonmc.rebar.datatypes.RebarSerializers
 import io.github.pylonmc.rebar.entity.packet.BlockTextureEntity
@@ -20,22 +20,24 @@ import io.github.pylonmc.rebar.item.builder.ItemStackBuilder
 import io.github.pylonmc.rebar.nms.NmsAccessor
 import io.github.pylonmc.rebar.registry.RebarRegistry
 import io.github.pylonmc.rebar.util.IMMEDIATE_FACES
+import io.github.pylonmc.rebar.util.editBlockData
+import io.github.pylonmc.rebar.util.isChunkLoaded
 import io.github.pylonmc.rebar.util.position.BlockPosition
 import io.github.pylonmc.rebar.util.position.position
 import io.github.pylonmc.rebar.util.rebarKey
 import io.github.pylonmc.rebar.waila.WailaDisplay
+import io.github.pylonmc.rebar.waila.WailaSupplier
 import io.papermc.paper.datacomponent.DataComponentTypes
 import net.kyori.adventure.key.Key
 import org.bukkit.*
 import org.bukkit.block.Block
-import org.bukkit.entity.Display
+import org.bukkit.block.data.BlockData
 import org.bukkit.entity.ItemDisplay
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataAdapterContext
 import org.bukkit.persistence.PersistentDataContainer
-import org.bukkit.util.Transformation
-import org.joml.Vector3f
+import java.util.function.Consumer
 
 /**
  * Represents a Rebar block in the world.
@@ -51,7 +53,7 @@ import org.joml.Vector3f
  *
  * @see BlockStorage
  */
-open class RebarBlock private constructor(val block: Block) : Keyed {
+open class RebarBlock private constructor(val block: Block) : WailaSupplier, Keyed {
 
     /**
      * All the data needed to create or load the block.
@@ -62,7 +64,6 @@ open class RebarBlock private constructor(val block: Block) : Keyed {
 
     val nameTranslationKey = schema.nameTranslationKey
     val loreTranslationKey = schema.loreTranslationKey
-    val defaultWailaTranslationKey = schema.defaultWailaTranslationKey
 
     /**
      * Set this to `true` if your block should not have a [blockTextureEntity] for custom models/textures.
@@ -96,6 +97,9 @@ open class RebarBlock private constructor(val block: Block) : Keyed {
 
     val defaultItem = RebarRegistry.ITEMS[schema.key]
 
+    val isChunkLoaded: Boolean
+        get() = block.isChunkLoaded
+
     /**
      * This constructor is called when a *new* block is created in the world.
      */
@@ -118,10 +122,10 @@ open class RebarBlock private constructor(val block: Block) : Keyed {
     /**
      * Called after the load constructor.
      *
-     * This is necessary because "external" stuff like [RebarInventoryBlock], [io.github.pylonmc.rebar.block.base.RebarFluidBufferBlock]
-     * and [RebarEntityHolderBlock] load their data *after* the load constructor is called.
+     * This is necessary because "external" stuff like [GuiRebarBlock], [io.github.pylonmc.rebar.block.interfaces.FluidBufferRebarBlock]
+     * and [EntityHolderRebarBlock] load their data *after* the load constructor is called.
      * If you need to use data from these interfaces (such as the amount of fluid stored in
-     * a [io.github.pylonmc.rebar.block.base.RebarFluidBufferBlock], you must use this
+     * a [io.github.pylonmc.rebar.block.interfaces.FluidBufferRebarBlock], you must use this
      * instead of using the data in the load constructor.
      */
     protected open fun postLoad() {}
@@ -130,13 +134,23 @@ open class RebarBlock private constructor(val block: Block) : Keyed {
      * Called after both the create constructor and the load constructor.
      *
      * Use this to initialise stuff which must always be initialised, like creating logistics
-     * groups (see [io.github.pylonmc.rebar.block.base.RebarLogisticBlock]).
+     * groups (see [io.github.pylonmc.rebar.block.interfaces.LogisticRebarBlock]).
      *
      * Called before [postLoad], after [io.github.pylonmc.rebar.event.RebarBlockPlaceEvent],
      * after [RebarBlockDeserializeEvent], and
      * before [io.github.pylonmc.rebar.event.RebarBlockLoadEvent]
      */
     open fun postInitialise() {}
+
+    @JvmOverloads
+    fun editBlockData(editor: Consumer<BlockData>, applyPhysics: Boolean = true) {
+        block.editBlockData(editor, applyPhysics)
+    }
+
+    @JvmOverloads
+    fun <D : BlockData> editBlockData(dataType: Class<D>, editor: Consumer<D>, applyPhysics: Boolean = true) {
+        block.editBlockData(dataType, editor, applyPhysics)
+    }
 
     /**
      * Used to initialize [blockTextureEntity].
@@ -149,30 +163,11 @@ open class RebarBlock private constructor(val block: Block) : Keyed {
      */
     protected open fun setupBlockTexture(entity: BlockTextureEntity): BlockTextureEntity = entity.apply {
         // TODO: Add a way to easily just change the transformation of the entity, without having to override this method entirely
-        val item = getBlockTextureItem() ?: ItemStack(Material.BARRIER)
+        val item = getBlockTextureItem()
         item.setData(DataComponentTypes.ITEM_MODEL, Key.key("air"))
         itemStack = item
         itemDisplayTransform = ItemDisplay.ItemDisplayTransform.FIXED
-        brightness = Display.Brightness(15, 15)
-        transformation = transformation.let {
-            Transformation(
-                it.translation,
-                it.leftRotation,
-                Vector3f(1 + BlockTextureEntity.BLOCK_OVERLAP_INCREASE),
-                it.rightRotation
-            )
-        }
         entity.spawn()
-    }
-
-    /**
-     * Schedules the block texture item to be refreshed on the next server tick.
-     * See [refreshBlockTextureItem].
-     */
-    fun scheduleBlockTextureItemRefresh() {
-        Bukkit.getScheduler().runTask(Rebar) { _ ->
-            refreshBlockTextureItem()
-        }
     }
 
     /**
@@ -181,7 +176,7 @@ open class RebarBlock private constructor(val block: Block) : Keyed {
      */
     fun refreshBlockTextureItem() {
         blockTextureEntity?.let {
-            it.itemStack = getBlockTextureItem() ?: ItemStack(Material.BARRIER)
+            it.itemStack = getBlockTextureItem()
         }
     }
 
@@ -195,12 +190,16 @@ open class RebarBlock private constructor(val block: Block) : Keyed {
      *
      * When overriding this method you most likely want to work off the result of `super.getBlockTextureProperties()`
      * instead of returning a new map entirely, to ensure that any properties provided by superclasses
-     * are preserved. (e.g. [RebarDirectionalBlock])
+     * are preserved. (e.g. [DirectionalRebarBlock])
      */
     open fun getBlockTextureProperties(): MutableMap<String, Pair<String, Int>> {
         val properties = mutableMapOf<String, Pair<String, Int>>()
-        if (this is RebarDirectionalBlock) {
-            properties["facing"] = facing.name.lowercase() to IMMEDIATE_FACES.size
+        if (this is DirectionalRebarBlock) {
+            try {
+                properties["facing"] = facing.name.lowercase() to IMMEDIATE_FACES.size
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
         return properties
     }
@@ -208,8 +207,9 @@ open class RebarBlock private constructor(val block: Block) : Keyed {
     /**
      * Returns the item that should be used to display the block's texture.
      *
-     * By default, returns the item with the same key as the block, marked with the
-     * [rebarBlockTextureEntityKey]. The item will also have custom model data with
+     * By default, returns the rebar item with the same key as the block, marked with the
+     * [rebarBlockTextureEntityKey], or if there is no matching rebar item, an item with
+     * the block material & key. The item will also have custom model data with
      * the vanilla block state properties of the block, merged with any custom
      * properties provided by the block. (see [getBlockTextureProperties])
      * This allows resource packs to provide different models/textures for different
@@ -220,14 +220,23 @@ open class RebarBlock private constructor(val block: Block) : Keyed {
      *
      * @return the item that should be used to display the block's texture
      */
-    open fun getBlockTextureItem() = defaultItem?.getItemStack()?.let { ItemStackBuilder(it) }?.apply {
-        editPdc { it.set(rebarBlockTextureEntityKey, RebarSerializers.BOOLEAN, true) }
-        val properties = NmsAccessor.instance.getStateProperties(block, getBlockTextureProperties())
-        for ((property, value) in properties) {
-            addCustomModelDataString("$property=$value")
+    open fun getBlockTextureItem(): ItemStack {
+        val builder = if (defaultItem != null) {
+            ItemStackBuilder.of(defaultItem.getItemStack())
+        } else {
+            ItemStackBuilder.of(schema.material)
+                .addCustomModelDataString(key.toString())
         }
-        set(DataComponentTypes.ITEM_MODEL, Key.key("air"))
-    }?.build()
+
+        return builder.apply {
+            editPdc { it.set(rebarBlockTextureEntityKey, RebarSerializers.BOOLEAN, true) }
+            val properties = NmsAccessor.instance.getStateProperties(block, getBlockTextureProperties())
+            for ((property, value) in properties) {
+                addCustomModelDataString("$property=$value")
+            }
+            set(DataComponentTypes.ITEM_MODEL, Key.key("air"))
+        }.build()
+    }
 
     /**
      * WAILA is the text that shows up when looking at a block to tell you what the block is.
@@ -236,8 +245,8 @@ open class RebarBlock private constructor(val block: Block) : Keyed {
      *
      * @return the WAILA configuration, or null if WAILA should not be shown for this block.
      */
-    open fun getWaila(player: Player): WailaDisplay? {
-        return WailaDisplay(defaultWailaTranslationKey)
+    override fun getWaila(player: Player): WailaDisplay? {
+        return WailaDisplay.of(this, player)
     }
 
     /**
@@ -264,7 +273,7 @@ open class RebarBlock private constructor(val block: Block) : Keyed {
      *
      * @return the item the block should give when middle clicked, or null if none
      */
-    open fun getPickItem() = defaultItem?.getItemStack()
+    open fun getPickItem(player: Player) = defaultItem?.getItemStack()
 
     /**
      * Called when debug info is requested for the block by someone
@@ -284,17 +293,41 @@ open class RebarBlock private constructor(val block: Block) : Keyed {
      * *Do not assume that when this is called, the block is being unloaded.* This
      * may be called for other reasons, such as when a player right clicks with
      * [DebugWaxedWeatheredCutCopperStairs].
-     * Instead, implement [io.github.pylonmc.rebar.block.base.RebarUnloadBlock] and
-     * use [io.github.pylonmc.rebar.block.base.RebarUnloadBlock.onUnload].
+     * Instead, implement [io.github.pylonmc.rebar.block.interfaces.UnloadRebarBlockHandler] and
+     * use [io.github.pylonmc.rebar.block.interfaces.UnloadRebarBlockHandler.onUnload].
      */
     open fun write(pdc: PersistentDataContainer) {}
 
     /**
      * Returns settings associated with the block.
      *
-     * Shorthand for `Settings.get(getKey())`
+     * Shorthand for `ConfigSection.fromSettings(getKey())`
      */
-    fun getSettings(): Config = Settings.get(key)
+    fun getSettings() = ConfigSection.fromSettings(key)
+
+    /**
+     * Shorthand for getSettings().get(...)
+     */
+    fun <T> getSetting(key: String, adapter: ConfigAdapter<T>)
+        = getSettings().get(key, adapter)
+
+    /**
+     * Shorthand for getSettings().get(...)
+     */
+    fun <T> getSetting(key: String, adapter: ConfigAdapter<T>, defaultValue: T)
+        = getSettings().get(key, adapter, defaultValue)
+
+    /**
+     * Shorthand for getSettings().get(...)
+     */
+    fun <T> getSetting(key: String, adapter: ConfigAdapter<T>, defaultValue: () -> T)
+        = getSettings().get(key, adapter, defaultValue)
+
+    /**
+     * Shorthand for getSettings().getOrThrow(...)
+     */
+    fun <T> getSettingOrThrow(key: String, adapter: ConfigAdapter<T>)
+        = getSettings().getOrThrow(key, adapter)
 
     companion object {
 

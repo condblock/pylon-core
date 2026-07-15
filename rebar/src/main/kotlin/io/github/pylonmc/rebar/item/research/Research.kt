@@ -10,7 +10,7 @@ import io.github.pylonmc.rebar.item.RebarItem
 import io.github.pylonmc.rebar.item.RebarItemSchema
 import io.github.pylonmc.rebar.item.research.Research.Companion.canPickUp
 import io.github.pylonmc.rebar.util.ConfettiParticle
-import io.github.pylonmc.rebar.recipe.FluidOrItem
+import io.github.pylonmc.rebar.recipe.ingredient.FluidOrItem
 import io.github.pylonmc.rebar.recipe.RecipeType
 import io.github.pylonmc.rebar.recipe.vanilla.VanillaRecipeType
 import io.github.pylonmc.rebar.registry.RebarRegistry
@@ -70,6 +70,11 @@ class Research(
     )
 
     fun register() {
+        for (itemId in unlocks) {
+            if (itemId !in RebarRegistry.ITEMS) {
+                Rebar.logger.warning("Research ${this.key} includes non-existent item id $itemId")
+            }
+        }
         RebarRegistry.RESEARCHES.register(this)
     }
 
@@ -85,7 +90,7 @@ class Research(
 
         addResearch(player, this)
         for (recipe in RecipeType.vanillaCraftingRecipes()) {
-            val schema = RebarItemSchema.fromStack(recipe.craftingRecipe.result) ?: continue
+            val schema = RebarItemSchema.fromStack(recipe.result.item) ?: continue
             if (schema.key in unlocks) {
                 player.discoverRecipe(recipe.key)
             }
@@ -126,7 +131,7 @@ class Research(
 
         removeResearch(player, this)
         for (recipe in RecipeType.vanillaCraftingRecipes()) {
-            val schema = RebarItemSchema.fromStack(recipe.craftingRecipe.result) ?: continue
+            val schema = RebarItemSchema.fromStack(recipe.result.item) ?: continue
             if (schema.key in unlocks) {
                 player.undiscoverRecipe(recipe.key)
             }
@@ -151,7 +156,6 @@ class Research(
         private val researchPointsKey = rebarKey("research_points")
         private val researchConfettiKey = rebarKey("research_confetti")
         private val researchSoundsKey = rebarKey("research_sounds")
-        private val guideHintsKey = rebarKey("guide_hints")
         private val researchesType =
             RebarSerializers.LIST.listTypeFrom(RebarSerializers.NAMESPACED_KEY)
 
@@ -163,9 +167,6 @@ class Research(
 
         @JvmStatic
         var Player.researchSounds: Boolean by persistentData(researchSoundsKey, RebarSerializers.BOOLEAN, true)
-
-        @JvmStatic
-        var Player.guideHints: Boolean by persistentData(guideHintsKey, RebarSerializers.BOOLEAN, true)
 
         @JvmStatic
         fun getResearches(player: OfflinePlayer): List<Research> {
@@ -192,8 +193,14 @@ class Research(
         @JvmStatic
         @JvmOverloads
         @JvmName("canPlayerCraft")
-        fun Player.canCraft(item: RebarItem, sendMessage: Boolean = false, respectBypass: Boolean = true): Boolean
-            = canCraft(item.schema, sendMessage, respectBypass)
+        fun Player.canCraft(item: RebarItem, sendMessage: Boolean = false): Boolean
+            = canCraft(item.schema, sendMessage)
+
+        @JvmStatic
+        @JvmOverloads
+        @JvmName("canPlayerCraft")
+        fun Player.canCraft(key: NamespacedKey, sendMessage: Boolean = false): Boolean
+                = RebarRegistry.ITEMS[key]?.let { canCraft(it, sendMessage) } ?: false
 
         /**
          * Checks whether a player can craft an item (ie has the associated research, or
@@ -205,8 +212,8 @@ class Research(
         @JvmStatic
         @JvmOverloads
         @JvmName("canPlayerCraft")
-        fun Player.canCraft(schema: RebarItemSchema, sendMessage: Boolean = false, respectBypass: Boolean = true): Boolean {
-            if (!RebarConfig.ResearchConfig.ENABLED || (respectBypass && this.hasPermission(schema.researchBypassPermission))) return true
+        fun Player.canCraft(schema: RebarItemSchema, sendMessage: Boolean = false): Boolean {
+            if (!RebarConfig.ResearchConfig.ENABLED) return true
 
             val research = schema.research ?: return true
 
@@ -250,6 +257,18 @@ class Research(
         fun Player.canPickUp(item: RebarItem, sendMessage: Boolean = false): Boolean = canCraft(item, sendMessage)
 
         /**
+         * Checks whether a player can pick up an item based off its key (ie has the associated
+         * research, or has permission to bypass research.
+         *
+         * @param sendMessage Whether, if the player cannot pick up the item, a message should be sent to them
+         * to notify them of this fact
+         */
+        @JvmStatic
+        @JvmOverloads
+        @JvmName("canPlayerPickUp")
+        fun Player.canPickUp(key: NamespacedKey, sendMessage: Boolean = false): Boolean = canCraft(key, sendMessage)
+
+        /**
          * Checks whether a player can pick up an item (ie has the associated research, or
          * has permission to bypass research.
          *
@@ -266,6 +285,12 @@ class Research(
         @JvmName("canPlayerUse")
         fun Player.canUse(item: RebarItem, sendMessage: Boolean = false): Boolean
             = canUse(item.schema, sendMessage)
+
+        @JvmStatic
+        @JvmOverloads
+        @JvmName("canPlayerUse")
+        fun Player.canUse(key: NamespacedKey, sendMessage: Boolean = false): Boolean
+                = RebarRegistry.ITEMS[key]?.let { canUse(it, sendMessage) } ?: false
 
         /**
          * Checks whether a player can use an item (ie has the associated research, or
@@ -324,7 +349,7 @@ class Research(
 
             // discover only the recipes that have no research whenever an ingredient is added to the inventory
             for (recipeType in RebarRegistry.RECIPE_TYPES) {
-                if (recipeType !is VanillaRecipeType<*>) continue
+                if (recipeType !is VanillaRecipeType<*, *>) continue
                 for (recipe in recipeType) {
                     if (recipe.key in VanillaRecipeType.nonRebarRecipes) continue
                     val researches = recipe.results
