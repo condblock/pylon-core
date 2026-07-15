@@ -3,8 +3,10 @@ package io.github.pylonmc.rebar.item
 import io.github.pylonmc.rebar.block.BlockStorage
 import io.github.pylonmc.rebar.block.RebarBlock
 import io.github.pylonmc.rebar.block.context.BlockCreateContext
+import io.github.pylonmc.rebar.config.RebarConfig
 import io.github.pylonmc.rebar.datatypes.RebarSerializers
 import io.github.pylonmc.rebar.event.PreRebarBlockPlaceEvent
+import io.github.pylonmc.rebar.item.interfaces.VanillaBlockItem
 import io.github.pylonmc.rebar.item.research.Research
 import io.github.pylonmc.rebar.registry.RebarRegistry
 import io.github.pylonmc.rebar.registry.RegistryHandler
@@ -12,12 +14,12 @@ import io.github.pylonmc.rebar.util.findConstructorMatching
 import io.github.pylonmc.rebar.util.getAddon
 import io.github.pylonmc.rebar.util.position.position
 import io.github.pylonmc.rebar.util.rebarKey
-import io.papermc.paper.command.brigadier.argument.ArgumentTypes.blockPosition
 import org.bukkit.Keyed
 import org.bukkit.NamespacedKey
 import org.bukkit.inventory.ItemStack
 import org.jetbrains.annotations.Contract
 import java.lang.invoke.MethodHandle
+import kotlin.math.min
 
 /**
  * Stores information about a Rebar item type, including its key, template [ItemStack], class, and
@@ -35,6 +37,7 @@ class RebarItemSchema @JvmOverloads internal constructor(
         ?: throw IllegalArgumentException("Provided item stack is not a Rebar item; make sure you are using ItemStackBuilder.defaultBuilder to create the item stack")
 
     val addon = getAddon(key)
+    val isDisabled = key in RebarConfig.DISABLED_ITEMS
 
     /**
      * Returns the raw [template] of the [RebarItemSchema], this is the template used
@@ -47,7 +50,7 @@ class RebarItemSchema @JvmOverloads internal constructor(
      * Return's a clone of the [template] [ItemStack]
      */
     @JvmOverloads
-    fun getItemStack(count: Int = 1): ItemStack = template.asQuantity(count)
+    fun getItemStack(count: Int = 1): ItemStack = if (count == 1) template.asOne() else template.asQuantity(min(count, template.maxStackSize))
 
     /**
      * Return's a new instance of the [RebarItem] from the [itemClass] using a copy of the [template] [ItemStack]
@@ -61,16 +64,14 @@ class RebarItemSchema @JvmOverloads internal constructor(
     val research: Research?
         get() = RebarRegistry.RESEARCHES.find { key in it.unlocks }
 
-    val researchBypassPermission = "rebar.item.${key.namespace}.${key.key}"
-
     @JvmSynthetic
     internal val loadConstructor: MethodHandle = itemClass.findConstructorMatching(ItemStack::class.java)
         ?: throw NoSuchMethodException("Item '$key' (${itemClass.simpleName}) is missing a load constructor (ItemStack)")
 
     fun prePlace(context: BlockCreateContext): Boolean {
-        if (rebarBlockKey == null) {
-            return false
-        }
+        if (isType(VanillaBlockItem::class.java)) return true
+        else if (rebarBlockKey == null) return false
+
         val blockSchema = RebarRegistry.BLOCKS[rebarBlockKey]
         check(blockSchema != null) { "Block $rebarBlockKey not found" }
         check(template.type == blockSchema.material) {
@@ -88,6 +89,7 @@ class RebarItemSchema @JvmOverloads internal constructor(
      * Does nothing if no block is associated with this item.
      */
     fun place(context: BlockCreateContext): RebarBlock? {
+        if (isType(VanillaBlockItem::class.java)) return null
         check(rebarBlockKey != null) { "Item $key does not place a block" }
         val blockSchema = RebarRegistry.BLOCKS[rebarBlockKey]
         check(blockSchema != null) { "Block $rebarBlockKey not found" }

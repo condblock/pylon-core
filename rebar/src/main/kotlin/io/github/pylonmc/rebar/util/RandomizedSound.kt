@@ -1,5 +1,7 @@
 package io.github.pylonmc.rebar.util
 
+import io.github.pylonmc.rebar.block.RebarBlock
+import io.github.pylonmc.rebar.entity.RebarEntity
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.sound.Sound
@@ -7,6 +9,10 @@ import org.bukkit.Location
 import org.bukkit.block.Block
 import org.bukkit.entity.Entity
 
+/**
+ * Picks a random sound and a random volume and pitch from the ranges
+ * when played.
+ */
 data class RandomizedSound(
     val keys: Collection<Key>,
     val source: Sound.Source,
@@ -24,9 +30,15 @@ data class RandomizedSound(
 
     fun play(block: Block) = play(block.location.toCenterLocation())
 
+    fun play(block: RebarBlock) = play(block.block)
+
     fun playAt(entity: Entity) = play(entity.location)
 
-    fun playFrom(entity: Entity) = entity.world.playSound(create(), entity)
+    fun playAt(entity: RebarEntity<*>) = playAt(entity.entity)
+
+    fun playFrom(entity: Entity) = playTo(entity.world, entity)
+
+    fun playFrom(entity: RebarEntity<*>) = playFrom(entity.entity)
 
     @JvmOverloads
     fun playTo(audience: Audience, emitter: Sound.Emitter? = null) = if (emitter != null) {

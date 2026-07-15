@@ -2,34 +2,28 @@ package io.github.pylonmc.rebar.block
 
 import com.destroystokyo.paper.event.block.BlockDestroyEvent
 import io.github.pylonmc.rebar.Rebar
-import io.github.pylonmc.rebar.block.base.RebarFallingBlock
-import io.github.pylonmc.rebar.block.base.RebarTickingBlock
+import io.github.pylonmc.rebar.block.interfaces.TickingRebarBlock
 import io.github.pylonmc.rebar.block.context.BlockBreakContext
 import io.github.pylonmc.rebar.block.context.BlockCreateContext
 import io.github.pylonmc.rebar.config.RebarConfig
-import io.github.pylonmc.rebar.entity.EntityStorage
 import io.github.pylonmc.rebar.event.api.MultiListener
 import io.github.pylonmc.rebar.event.api.annotation.MultiHandler
 import io.github.pylonmc.rebar.item.RebarItem
 import io.github.pylonmc.rebar.item.research.Research.Companion.canUse
 import io.github.pylonmc.rebar.util.isFakeEvent
+import io.github.pylonmc.rebar.util.position.BlockPosition
 import io.github.pylonmc.rebar.util.position.position
 import io.papermc.paper.event.block.BlockBreakBlockEvent
+import io.papermc.paper.event.block.BlockBreakProgressUpdateEvent
 import org.bukkit.ExplosionResult
 import org.bukkit.Material
-import org.bukkit.block.Block
-import org.bukkit.entity.FallingBlock
 import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.block.*
-import org.bukkit.event.entity.EntityChangeBlockEvent
-import org.bukkit.event.entity.EntityDropItemEvent
 import org.bukkit.event.entity.EntityExplodeEvent
-import org.bukkit.event.entity.EntityRemoveEvent
 import org.bukkit.event.player.PlayerBucketEmptyEvent
 import org.bukkit.event.world.StructureGrowEvent
-import org.bukkit.inventory.ItemStack
 import java.util.*
 
 
@@ -43,11 +37,19 @@ import java.util.*
 @Suppress("UnstableApiUsage")
 internal object BlockListener : MultiListener {
     private val blockErrMap: MutableMap<RebarBlock, Int> = WeakHashMap()
+
+    @JvmSynthetic
+    internal val blockBreakProgressMap: MutableMap<BlockPosition, Float> = HashMap()
     
     @MultiHandler(priorities = [ EventPriority.LOWEST, EventPriority.MONITOR ], ignoreCancelled = true)
     private fun blockPlace(event: BlockPlaceEvent, priority: EventPriority) {
-        val item = event.itemInHand
+        val rebarBlock = BlockStorage.get(event.block)
+        if (rebarBlock != null) {
+            event.isCancelled = true
+            return
+        }
 
+        val item = event.itemInHand
         if (!item.type.isBlock) {
             return
         }
@@ -74,116 +76,6 @@ internal object BlockListener : MultiListener {
         } else if (priority == EventPriority.MONITOR) {
             rebarItem.place(context)
         }
-    }
-
-    private val fallMap = HashMap<UUID, Pair<RebarFallingBlock, RebarFallingBlock.RebarFallingBlockEntity>>();
-
-    @EventHandler(ignoreCancelled = true)
-    private fun entityBlockChange(event: EntityChangeBlockEvent) {
-        val entity = event.entity
-
-        if (entity !is FallingBlock) return
-
-        val block = event.block
-
-        if (!entity.isInWorld) {
-            handleFallStart(block, event, entity)
-        } else {
-            handleFallStop(block, event, entity)
-        }
-    }
-
-    private fun handleFallStop(
-        block: Block,
-        event: EntityChangeBlockEvent,
-        entity: FallingBlock
-    ) {
-        val rebarEntity = EntityStorage.get(entity) as? RebarFallingBlock.RebarFallingBlockEntity
-
-        // falling onto another pylon block
-        if (BlockStorage.get(block) != null) {
-            val drop = if (rebarEntity == null) {
-                ItemStack.of(entity.blockData.material)
-            } else {
-                rebarEntity.fallbackItem()
-            }
-
-            if (drop != null) {
-                entity.world.dropItemNaturally(entity.location, drop)
-            }
-
-            entity.remove()
-            event.isCancelled = true
-            return
-        }
-
-        // if everything is valid, place the block
-        rebarEntity ?: return
-        val rebarBlock = BlockStorage.loadBlock(
-            block.position,
-            rebarEntity.blockSchema,
-            rebarEntity.blockData
-        ) as RebarFallingBlock
-
-        rebarBlock.onFallStop(event, rebarEntity)
-    }
-
-    private fun handleFallStart(
-        block: Block,
-        event: EntityChangeBlockEvent,
-        entity: FallingBlock
-    ) {
-        val rebarBlock = BlockStorage.get(block) ?: return
-        val rebarFallingBlock = rebarBlock as? RebarFallingBlock
-        if (rebarFallingBlock == null) {
-            event.isCancelled = true
-            return
-        }
-
-        val blockPdc = RebarBlock.serialize(rebarBlock, block.chunk.persistentDataContainer.adapterContext) ?: return
-        val fallingEntity = RebarFallingBlock.RebarFallingBlockEntity(
-            rebarBlock.schema,
-            blockPdc,
-            block.position,
-            entity
-        )
-
-        rebarFallingBlock.onFallStart(event, fallingEntity)
-
-        if (event.isCancelled) return
-
-        BlockStorage.deleteBlock(block.position)
-        EntityStorage.add(fallingEntity)
-        // save this here as the entity storage is going to nuke it if the item drops
-        fallMap[entity.uniqueId] = Pair(rebarFallingBlock, fallingEntity)
-    }
-
-    @EventHandler
-    private fun entityDespawn(event: EntityRemoveEvent) {
-        // DESPAWN = Fell and created block ; OUT_OF_WORLD = Fell and dropped item
-        if (event.cause != EntityRemoveEvent.Cause.DESPAWN) return
-        val entity = event.entity
-        if (entity !is FallingBlock) return
-        fallMap.remove(entity.uniqueId)
-    }
-
-    @EventHandler(ignoreCancelled = true)
-    private fun fallingBlockDrop(event: EntityDropItemEvent) {
-        val entity = event.entity
-
-        if (entity !is FallingBlock) return
-
-        val (rebarFallingBlock, rebarFallingEntity) = fallMap[entity.uniqueId] ?: return
-        fallMap.remove(entity.uniqueId)
-
-        val relativeItem = rebarFallingBlock.onItemDrop(event, rebarFallingEntity)
-        if (event.isCancelled) return
-        if (relativeItem == null) {
-            event.isCancelled = true
-            return
-        }
-
-        event.itemDrop.itemStack = relativeItem
     }
 
     @MultiHandler(priorities = [ EventPriority.LOWEST, EventPriority.MONITOR ], ignoreCancelled = true)
@@ -359,8 +251,9 @@ internal object BlockListener : MultiListener {
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     private fun disallowStructureGrow(event: StructureGrowEvent) {
+        // The block at event.location is handled in StructureGrowRebarBlockHandler
         for (state in event.blocks) {
-            if (BlockStorage.isRebarBlock(state.block)) {
+            if (event.location != state.location && BlockStorage.isRebarBlock(state.block)) {
                 event.isCancelled = true
                 return
             }
@@ -368,18 +261,19 @@ internal object BlockListener : MultiListener {
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    private fun preventReplacingStructureVoids(event: BlockPlaceEvent) {
+    private fun onFluidPlace(event: PlayerBucketEmptyEvent) {
         val rebarBlock = BlockStorage.get(event.block)
-        if (rebarBlock != null && rebarBlock.schema.material == Material.STRUCTURE_VOID) {
+        if (rebarBlock != null && rebarBlock.block.type != Material.CAULDRON) {
             event.isCancelled = true
         }
     }
 
-    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    private fun onFluidPlace(event: PlayerBucketEmptyEvent) {
-        val rebarBlock = BlockStorage.get(event.block)
-        if (rebarBlock != null && rebarBlock.schema.material == Material.STRUCTURE_VOID) {
-            event.isCancelled = true
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    private fun onBlockBreakProgressUpdated(event: BlockBreakProgressUpdateEvent) {
+        if (event.progress == 0.0F) {
+            blockBreakProgressMap.remove(event.block.position)
+        } else {
+            blockBreakProgressMap[event.block.position] = event.progress
         }
     }
 
@@ -394,8 +288,8 @@ internal object BlockListener : MultiListener {
         blockErrMap[block] = blockErrMap[block]?.plus(1) ?: 1
         if (blockErrMap[block]!! > RebarConfig.ALLOWED_BLOCK_ERRORS) {
             BlockStorage.makePhantom(block)
-            if (block is RebarTickingBlock) {
-                RebarTickingBlock.stopTicking(block)
+            if (block is TickingRebarBlock) {
+                TickingRebarBlock.stopTicking(block)
             }
         }
     }

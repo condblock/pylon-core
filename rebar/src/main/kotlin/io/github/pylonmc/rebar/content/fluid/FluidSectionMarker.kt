@@ -1,9 +1,9 @@
 package io.github.pylonmc.rebar.content.fluid
 
 import io.github.pylonmc.rebar.block.RebarBlock
-import io.github.pylonmc.rebar.block.base.RebarBreakHandler
-import io.github.pylonmc.rebar.block.base.RebarEntityHolderBlock
-import io.github.pylonmc.rebar.block.base.RebarFacadeBlock
+import io.github.pylonmc.rebar.block.interfaces.BlockBreakRebarBlockHandler
+import io.github.pylonmc.rebar.block.interfaces.EntityHolderRebarBlock
+import io.github.pylonmc.rebar.block.interfaces.FacadeRebarBlock
 import io.github.pylonmc.rebar.block.context.BlockBreakContext
 import io.github.pylonmc.rebar.block.context.BlockBreakContext.PlayerBreak
 import io.github.pylonmc.rebar.block.context.BlockCreateContext
@@ -19,10 +19,9 @@ import org.bukkit.persistence.PersistentDataContainer
 /**
  * An invisible block (structure block) that exists purely to represent a pipe and prevent
  * blocks from being placed on top of them.
- * TODO: [io.github.pylonmc.rebar.block.base.RebarEntityGroupCulledBlock]
+ * TODO: [io.github.pylonmc.rebar.block.interfaces.EntityGroupCulledRebarBlock]
  */
-class FluidSectionMarker : RebarBlock, RebarBreakHandler, RebarEntityHolderBlock, RebarFacadeBlock {
-    override val facadeDefaultBlockType = Material.STRUCTURE_VOID
+class FluidSectionMarker : RebarBlock, BlockBreakRebarBlockHandler, EntityHolderRebarBlock, FacadeRebarBlock {
     override var disableBlockTextureEntity = true
 
     @Suppress("unused")
@@ -37,7 +36,7 @@ class FluidSectionMarker : RebarBlock, RebarBreakHandler, RebarEntityHolderBlock
     val pipe
         get() = pipeDisplay?.pipe
 
-    override fun onBreak(drops: MutableList<ItemStack>, context: BlockBreakContext) {
+    override fun onBlockBreak(drops: MutableList<ItemStack>, context: BlockBreakContext) {
         var player: Player? = null
         if (context is PlayerBreak) {
             player = context.event.player
@@ -47,11 +46,11 @@ class FluidSectionMarker : RebarBlock, RebarBreakHandler, RebarEntityHolderBlock
     }
 
     override fun getWaila(player: Player): WailaDisplay?
-        = WailaDisplay(defaultWailaTranslationKey.arguments(RebarArgument.of("pipe", pipe!!.stack.effectiveName())))
+        = WailaDisplay.of(pipe!!.stack.effectiveName())
 
     override fun getDropItem(context: BlockBreakContext) = null
 
-    override fun getPickItem() = pipe!!.stack
+    override fun getPickItem(player: Player) = pipe!!.stack
 
     companion object {
         val KEY = rebarKey("fluid_pipe_section_marker")

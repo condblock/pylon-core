@@ -5,8 +5,8 @@ import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.github.pylonmc.rebar.Rebar
 import io.github.pylonmc.rebar.block.RebarBlock
-import io.github.pylonmc.rebar.block.base.RebarCulledBlock
-import io.github.pylonmc.rebar.block.base.RebarGroupCulledBlock
+import io.github.pylonmc.rebar.block.interfaces.CulledRebarBlock
+import io.github.pylonmc.rebar.block.interfaces.GroupCulledRebarBlock
 import io.github.pylonmc.rebar.config.RebarConfig
 import io.github.pylonmc.rebar.culling.PlayerCullingJob.Companion.cullingBoundingBox
 import io.github.pylonmc.rebar.datatypes.RebarSerializers
@@ -67,9 +67,9 @@ object BlockCullingEngine : Listener {
     val blockTextureOctrees = mutableMapOf<UUID, Octree<RebarBlock>>()
     internal val culledBlockOctrees = mutableMapOf<UUID, Octree<RebarBlock>>()
 
-    private val jobs = mutableMapOf<UUID, Job>()
-    internal val syncJobTasks = ConcurrentHashMap<UUID, MutableMap<RebarCulledBlock, Boolean>>()
-    internal val syncJobGroupTasks = ConcurrentHashMap<UUID, MutableMap<RebarGroupCulledBlock, MutableMap<RebarGroupCulledBlock.CullingGroup, Boolean>>>()
+    private val jobs = mutableMapOf<UUID, Pair<PlayerCullingJob, Job>>()
+    internal val syncJobTasks = ConcurrentHashMap<UUID, MutableMap<CulledRebarBlock, Boolean>>()
+    internal val syncJobGroupTasks = ConcurrentHashMap<UUID, MutableMap<GroupCulledRebarBlock, MutableMap<GroupCulledRebarBlock.CullingGroup, Boolean>>>()
 
     /**
      * Periodically invalidates a share of the occluding cache, to ensure stale data isn't perpetuated.
@@ -161,7 +161,7 @@ object BlockCullingEngine : Listener {
             this.pdc.set(cullingEnabledKey, RebarSerializers.BOOLEAN, actualValue)
             if (!actualValue) {
                 getOctree(this.world, culledBlockOctrees).query(cullingBoundingBox).forEach { block ->
-                    (block as? RebarCulledBlock)?.onVisible(this)
+                    (block as? CulledRebarBlock)?.onVisible(this)
                 }
             }
         }
@@ -196,7 +196,7 @@ object BlockCullingEngine : Listener {
         if (RebarConfig.BlockTextureConfig.ENABLED && !block.disableBlockTextureEntity) {
             getOctree(block.block.world, blockTextureOctrees).insert(block)
         }
-        if (block is RebarCulledBlock) {
+        if (block is CulledRebarBlock) {
             getOctree(block.block.world, culledBlockOctrees).insert(block)
         }
     }
@@ -208,7 +208,7 @@ object BlockCullingEngine : Listener {
             getOctree(block.block.world, blockTextureOctrees).remove(block)
             block.blockTextureEntity?.removeAllViewers()
         }
-        if (block is RebarCulledBlock) {
+        if (block is CulledRebarBlock) {
             getOctree(block.block.world, culledBlockOctrees).remove(block)
         }
     }
@@ -240,8 +240,8 @@ object BlockCullingEngine : Listener {
         val playerId = player.uniqueId
         if (!RebarConfig.CullingEngineConfig.ENABLED || jobs.containsKey(playerId) || !player.isValid) return
 
-        jobs[playerId] = Rebar.scope.launch(Dispatchers.Default) {
-            val job = PlayerCullingJob(playerId)
+        val job = PlayerCullingJob(playerId)
+        jobs[playerId] = job to Rebar.scope.launch(Dispatchers.Default) {
             while (true) {
                 job.run()
             }
@@ -251,9 +251,12 @@ object BlockCullingEngine : Listener {
     @JvmSynthetic
     internal fun hasCullingJob(playerId: UUID): Boolean = jobs.containsKey(playerId)
 
+    @JvmSynthetic @ApiStatus.Internal
+    fun getCullingJob(playerId: UUID): PlayerCullingJob? = jobs[playerId]?.first
+
     @JvmSynthetic
     internal fun stopCullingJob(playerId: UUID) {
-        jobs.remove(playerId)?.cancel()
+        jobs.remove(playerId)?.second?.cancel()
         blockTextureOctrees.values.forEach { it.allEntries().forEach { b -> b.blockTextureEntity?.removeViewer(playerId) } }
     }
 
@@ -347,7 +350,7 @@ object BlockCullingEngine : Listener {
             .build()
     ) {
         fun insert(block: Block, isOccluding: Boolean = NmsAccessor.instance.isOccluding(block)) {
-            occluding.put(BlockPosition.asLong(block.x, block.y, block.z), isOccluding)
+            occluding.put(BlockPosition.asLong(block), isOccluding)
         }
 
         fun isOccluding(world: World, blockX: Int, blockY: Int, blockZ: Int): Boolean {

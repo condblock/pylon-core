@@ -2,7 +2,7 @@ package io.github.pylonmc.rebar.guide.pages.item
 
 import io.github.pylonmc.rebar.content.guide.RebarGuide
 import io.github.pylonmc.rebar.guide.pages.base.PagedGuidePage
-import io.github.pylonmc.rebar.recipe.FluidOrItem
+import io.github.pylonmc.rebar.recipe.ingredient.FluidOrItem
 import io.github.pylonmc.rebar.recipe.RebarRecipe
 import io.github.pylonmc.rebar.recipe.RebarRecipe.Companion.priority
 import io.github.pylonmc.rebar.registry.RebarRegistry
@@ -19,26 +19,25 @@ import xyz.xenondevs.invui.gui.PagedGui
  */
 open class ItemRecipesPage(val stack: ItemStack) : PagedGuidePage {
 
-    val pages: MutableList<Gui>
-        get() {
-            val pages = mutableListOf<Gui>()
-            val recipes = mutableListOf<RebarRecipe>()
-            for (type in RebarRegistry.RECIPE_TYPES) {
-                for (recipe in type.recipes) {
-                    if (!recipe.isHidden && recipe.isOutput(stack)) {
-                        recipes.add(recipe)
-                    }
+    val pages: MutableList<Gui> by lazy {
+        val pages = mutableListOf<Gui>()
+        val recipes = mutableListOf<RebarRecipe>()
+        for (type in RebarRegistry.RECIPE_TYPES) {
+            for (recipe in type.recipes) {
+                if (!recipe.isHidden && recipe.isOutput(stack)) {
+                    recipes.add(recipe)
                 }
             }
-            recipes.sortByDescending { it.priority }
-            for (recipe in recipes) {
-                val display = recipe.display()
-                if (display != null) {
-                    pages.add(display)
-                }
-            }
-            return pages
         }
+        recipes.sortByDescending { it.priority }
+        for (recipe in recipes) {
+            val display = recipe.display()
+            if (display != null) {
+                pages.add(display)
+            }
+        }
+        pages
+    }
 
     override fun getKey() = KEY
 

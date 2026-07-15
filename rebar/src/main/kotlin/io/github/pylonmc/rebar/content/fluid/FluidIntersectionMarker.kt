@@ -1,9 +1,9 @@
 package io.github.pylonmc.rebar.content.fluid
 
 import io.github.pylonmc.rebar.block.RebarBlock
-import io.github.pylonmc.rebar.block.base.RebarBreakHandler
-import io.github.pylonmc.rebar.block.base.RebarEntityHolderBlock
-import io.github.pylonmc.rebar.block.base.RebarFacadeBlock
+import io.github.pylonmc.rebar.block.interfaces.BlockBreakRebarBlockHandler
+import io.github.pylonmc.rebar.block.interfaces.EntityHolderRebarBlock
+import io.github.pylonmc.rebar.block.interfaces.FacadeRebarBlock
 import io.github.pylonmc.rebar.block.context.BlockBreakContext
 import io.github.pylonmc.rebar.block.context.BlockBreakContext.PlayerBreak
 import io.github.pylonmc.rebar.block.context.BlockCreateContext
@@ -21,10 +21,9 @@ import org.bukkit.persistence.PersistentDataContainer
 /**
  * A 'fluid pipe connector' is one of the small gray displays that appears
  * on pipe corners/junctions.
- * TODO: [io.github.pylonmc.rebar.block.base.RebarEntityGroupCulledBlock]
+ * TODO: [io.github.pylonmc.rebar.block.interfaces.EntityGroupCulledRebarBlock]
  */
-class FluidIntersectionMarker : RebarBlock, RebarEntityHolderBlock, RebarBreakHandler, RebarFacadeBlock {
-    override val facadeDefaultBlockType = Material.STRUCTURE_VOID
+class FluidIntersectionMarker : RebarBlock, EntityHolderRebarBlock, BlockBreakRebarBlockHandler, FacadeRebarBlock {
     override var disableBlockTextureEntity = true
 
     @Suppress("unused")
@@ -38,7 +37,7 @@ class FluidIntersectionMarker : RebarBlock, RebarEntityHolderBlock, RebarBreakHa
     val fluidIntersectionDisplay
         get() = getHeldRebarEntityOrThrow(FluidIntersectionDisplay::class.java, "intersection")
 
-    override fun onBreak(drops: MutableList<ItemStack>, context: BlockBreakContext) {
+    override fun onBlockBreak(drops: MutableList<ItemStack>, context: BlockBreakContext) {
         var player: Player? = if (context is PlayerBreak) context.event.player else null
 
         // Clone to prevent ConcurrentModificationException if pipeDisplay.delete modified connectedPipeDisplays
@@ -50,7 +49,7 @@ class FluidIntersectionMarker : RebarBlock, RebarEntityHolderBlock, RebarBreakHa
     }
 
     override fun getWaila(player: Player): WailaDisplay?
-        = WailaDisplay(defaultWailaTranslationKey.arguments(RebarArgument.of("pipe", this.pipe.stack.effectiveName())))
+        = WailaDisplay.of(this.pipe.stack.effectiveName())
 
     val pipe: RebarItem
         get() {
@@ -61,7 +60,7 @@ class FluidIntersectionMarker : RebarBlock, RebarEntityHolderBlock, RebarBreakHa
 
     override fun getDropItem(context: BlockBreakContext) = null
 
-    override fun getPickItem() = pipe.stack
+    override fun getPickItem(player: Player) = pipe.stack
 
     companion object {
         @JvmField

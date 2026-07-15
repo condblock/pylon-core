@@ -11,6 +11,7 @@ import org.bukkit.entity.Display.Brightness
 import org.bukkit.entity.ItemDisplay
 import org.bukkit.inventory.ItemStack
 import org.joml.Matrix4f
+import java.util.function.Consumer
 
 
 @Suppress("unused")
@@ -44,12 +45,13 @@ open class ItemDisplayBuilder() {
         this.persistent = other.persistent
     }
 
-    fun material(material: Material) = apply { this.itemStack = ItemStack(material) }
+    fun material(material: Material) = apply { this.itemStack = ItemStack.of(material) }
     fun itemStack(itemStack: ItemStack?) = apply { this.itemStack = itemStack }
     fun itemStack(builder: ItemStackBuilder) = apply { this.itemStack = builder.build() }
     fun itemDisplayTransform(itemDisplayTransform: ItemDisplay.ItemDisplayTransform?) = apply { this.itemDisplayTransform = itemDisplayTransform }
     fun transformation(transformation: Matrix4f?) = apply { this.transformation = transformation }
     fun transformation(builder: TransformBuilder) = apply { this.transformation = builder.buildForItemDisplay() }
+    fun transformation(builder: Consumer<TransformBuilder>) = transformation(TransformBuilder().apply(builder::accept).build())
     fun brightness(brightness: Brightness) = apply { this.brightness = brightness }
     fun brightness(brightness: Int) = brightness(Brightness(0, brightness))
     fun glow(glowColor: Color?)  = apply { this.glowColor = glowColor }

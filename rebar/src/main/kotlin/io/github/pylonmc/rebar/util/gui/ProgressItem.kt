@@ -5,6 +5,7 @@ import io.github.pylonmc.rebar.item.builder.ItemStackBuilder
 import io.github.pylonmc.rebar.util.gui.unit.UnitFormat
 import io.papermc.paper.datacomponent.DataComponentTypes
 import io.papermc.paper.datacomponent.item.TooltipDisplay
+import io.papermc.paper.util.Tick
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -108,7 +109,7 @@ open class ProgressItem @JvmOverloads constructor(
      * Sets how far through the [totalTime] we are
      */
     fun setRemainingTimeTicks(ticks: Int) {
-        setRemainingTime(Duration.ofMillis((ticks * 1000.0 / 20.0).toLong()))
+        setRemainingTime(Tick.of(ticks.toLong()))
     }
 
     fun setTotalTimeSeconds(seconds: Int?) {
@@ -116,7 +117,7 @@ open class ProgressItem @JvmOverloads constructor(
     }
 
     fun setTotalTimeTicks(ticks: Int?) {
-        totalTime = ticks?.let { Duration.ofMillis((it * 1000.0 / 20.0).toLong()) }
+        totalTime = ticks?.let { Tick.of(it.toLong()) }
     }
 
     @Suppress("UnstableApiUsage")
