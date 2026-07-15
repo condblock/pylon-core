@@ -94,12 +94,13 @@ message:
         set: "%player%의 연구 포인트를 %points%로 설정하였습니다"
         added: "%player%의 연구 포인트를 %points% 추가했습니다"
         removed: "%player%의 연구 포인트를 %points% 제거했습니다"
-        query: "%player%의 연구 포인트: %points%"
+        get: "%player%의 연구 포인트: %points%"
     exposerecipe:
       not-configurable: "<red>조합법를 설정할 수 없습니다"
       warning: "<yellow>주의: 조합법 구성을 노출하면 자동으로 업데이트되지 않습니다. 되돌리려면 %file%을 삭제하세요"
     finishmultiblock:
-      failed: "<red>멀티블록을 바라보고 있지 않습니다"
+      not-looking: "<red>멀티블록을 바라보고 있지 않습니다"
+      failed: "블록이 채워지지 않았습니다"
       success: "멀티블록 완성됨"
     forceload: "청크 %x%, %z% 강제 로드 중"
     versions: |-
@@ -147,6 +148,7 @@ guide:
         <guidearrow> 접두사 <light_purple>@</light_purple>는 <light_purple>애드온</light_purple>의 id나 표기되는 이름을 검색합니다. 예시) "pylon"
         <guidearrow> 접두사 <aqua>$</aqua>는 아이템의 <aqua>설명</aqua>을 검색합니다
         <guidearrow> 접두사 검색은 접두사 바로 뒤에 있는 단어에만 적용됩니다
+        <guidearrow> 스페이스바는 '그리고'로 취급됩니다 ("철 주괴"는 "철"과 "주괴"를 검색합니다)
         <guidearrow> 예시) <light_purple>@pylon <white>철 <aqua>$온도 <white>슬러리
     research:
       cost:
@@ -563,6 +565,10 @@ unit:
     singular: "양동이/초"
     plural: "양동이/초"
     abbr: "B/초"
+  buckets_per_item:
+    singular: "양동이/아이템"
+    plural: "양동이/아이템"
+    abbr: "B/아이템"
   days:
     singular: "일"
     plural: "일"
