@@ -23,18 +23,16 @@ item:
       <arrow> <insn>쉬프트 오른쪽 클릭</insn>으로 블록/엔티티 제거
       <arrow> <insn>오른쪽 클릭</insn>으로 블록/엔티티의 리바 데이터 확인
 
-  fluid_pipe_intersection_marker:
-    waila: "%pipe%"
-
-  fluid_pipe_section_marker:
-    waila: "%pipe%"
-
 fluid:
+  none: "<#ce9d98>비어 있음"
   temperature:
     display-text: "<arrow> <attr>온도:</attr> %temperature%"
     cold: "<#1cb3d8>차가움"
     normal: "<#c9d81c>보통"
     hot: "<#d81c1c>뜨거움"
+
+waila:
+  error: "<red>WAILA error - check console"
 
 message:
   debug:
@@ -64,6 +62,9 @@ message:
     unknown: "<red>%item%을(를) 사용하는 방법을 알 수 없습니다. %research%에 대해 연구해 보세요."
     unlocked: "<green>%research%에 대한 연구를 마쳤습니다"
     click_to_research: "<green>클릭해서 연구 (%points% 포인트)"
+
+  waila:
+    type-disabled: "<red>서버에서 %type% WAILA를 허용하지 않아 기본값으로 변경되었습니다"
 
   command:
     error:
@@ -101,8 +102,7 @@ message:
     finishmultiblock:
       not-looking: "<red>멀티블록을 바라보고 있지 않습니다"
       failed: "블록이 채워지지 않았습니다"
-      success: "멀티블록 완성됨"
-    forceload: "청크 %x%, %z% 강제 로드 중"
+      success: "%filled%/%total%블록 채워짐"
     versions: |-
       <gray>서버가 사용 중인 리바 상태:</gray>
       <green>%server_implementation% <dark_green>%server_version%</dark_green> <gray>(API: %api_version%)</gray>
@@ -112,8 +112,8 @@ message:
       <gray>설치된 애드온:</gray> <dark_gray>(%addon_count%)</dark_gray>
       %addon_list%
 
-  waila:
-    type-disabled: "<red>이 서버는 더 이상 이전에 설정한 %type% WAILA 표시 유형을 허용하지 않습니다. 기본값으로 재설정되었습니다."
+    reloadlang:
+      success: "<green>언어 항목 리로드됨"
 
 gui:
   scroll:
@@ -136,9 +136,7 @@ guide:
     back:
       name: "<yellow>뒤로"
       hints: |-
-        
-        <u>도움말</u>
-        <guidearrow> <guideinsn>쉬프트 왼쪽 클릭</guideinsn>으로 메인 메뉴로 이동
+        <guidehint><guidearrow> <guideinsn>쉬프트 왼쪽 클릭</guideinsn>으로 메인 메뉴로 이동
     item-recipes: "<white>조합법"
     machine-recipes: "<white>기계를 사용하는 조합법"
     search-specifiers:
@@ -158,13 +156,11 @@ guide:
       hints:
         researched: |-
           
-          <u>도움말</u>
-          <guidearrow> <guideinsn>오른쪽 클릭</guideinsn>으로 해금되는 아이템 보기
+          <guidehint><guidearrow> <guideinsn>오른쪽 클릭</guideinsn>으로 해금되는 아이템 보기</guidehint>
         unresearched: |-
           
-          <u>도움말</u>
-          <guidearrow> <guideinsn>왼쪽 클릭</guideinsn>으로 연구
-          <guidearrow> <guideinsn>오른쪽 클릭</guideinsn>으로 해금되는 아이템 보기
+          <guidehint><guideinsn>왼쪽 클릭</guideinsn>으로 연구</guidehint>
+          <guidehint><guideinsn>오른쪽 클릭</guideinsn>으로 해금되는 아이템 보기</guidehint>
       unlocks-title: |-
       
         <u>해금되는 아이템</u>
@@ -183,8 +179,7 @@ guide:
       hints:
         unresearched: |-
           
-          <u>도움말</u>
-          <guidearrow> <guideinsn>쉬프트 왼쪽 클릭</guideinsn>으로 연구
+          <guidehint><guidearrow> <guideinsn>쉬프트 왼쪽 클릭</guideinsn>으로 연구
       error: "<red>아이템 로드 실패"
       amount: "%name%: <gray>%amount%%breakdown%"
       amount-breakdown: " (%stacks%x%stack-size% + %remainder%)"
@@ -246,24 +241,24 @@ guide:
         lore: |-
           <guidearrow> 시야에 들어오지 않는 블록의 텍스쳐를 숨기는 정도를 바꿉니다
           <guidearrow> 더 높은 컬링 설정은 일반적으로 성능을 향상시킬 수 있습니다.
-          <guidearrow> <green>(낮음) <yellow>%alwaysShowRadius%블록</yellow><gray> 이내의 블록 텍스쳐를 모두 표시합니다
-          <guidearrow> <green>(낮음) <yellow>%alwaysShowRadius%블록에서 %cullRadius%블록</yellow> 내의 블록 텍스쳐를 보수적으로 컬링합니다
+          <guidearrow> <green>(낮음) <gray>%alwaysShowRadius%블록</yellow><gray> 이내의 블록 텍스쳐를 모두 표시합니다
+          <guidearrow> <green>(낮음) <gray>%alwaysShowRadius%블록에서 %cullRadius%블록</yellow> 내의 블록 텍스쳐를 보수적으로 컬링합니다
           <guidearrow> <green>(낮음) <gray>시야와 블록 텍스쳐 사이의 거리가 <yellow>%maxOccludingCount%블록</yellow> 이상인 경우에만 컬링합니다
       medium:
         name: "<white>컬링 프리셋: <yellow>보통 <dark_gray>(클릭해서 전환)"
         lore: |-
           <guidearrow> 시야에 들어오지 않는 블록의 텍스쳐를 숨기는 정도를 바꿉니다
           <guidearrow> 더 높은 컬링 설정은 일반적으로 성능을 향상시킬 수 있습니다.
-          <guidearrow> <yellow>(보통) <yellow>%alwaysShowRadius%블록</yellow><gray> 이내의 블록 텍스쳐를 모두 표시합니다
-          <guidearrow> <yellow>(보통) <yellow>%alwaysShowRadius%블록에서 %cullRadius%블록</yellow> 내의 블록 텍스쳐를 적당히 컬링합니다
+          <guidearrow> <yellow>(보통) <gray>%alwaysShowRadius%블록</yellow><gray> 이내의 블록 텍스쳐를 모두 표시합니다
+          <guidearrow> <yellow>(보통) <gray>%alwaysShowRadius%블록에서 %cullRadius%블록</yellow> 내의 블록 텍스쳐를 적당히 컬링합니다
           <guidearrow> <yellow>(보통) <gray>시야와 블록 텍스쳐 사이의 거리가 <yellow>%maxOccludingCount%블록</yellow> 이상인 경우에만 컬링합니다
       high:
         name: "<white>컬링 프리셋: <red>높음 <dark_gray>(클릭해서 전환)"
         lore: |-
           <guidearrow> 시야에 들어오지 않는 블록의 텍스쳐를 숨기는 정도를 바꿉니다
           <guidearrow> 더 높은 컬링 설정은 일반적으로 성능을 향상시킬 수 있습니다.
-          <guidearrow> <red>(높음) <yellow>%alwaysShowRadius%블록</yellow><gray> 이내의 블록 텍스쳐를 모두 표시합니다
-          <guidearrow> <red>(높음) <yellow>%alwaysShowRadius%블록에서 %cullRadius%블록</yellow> 내의 블록 텍스쳐를 공격적으로 컬링합니다
+          <guidearrow> <red>(높음) <gray>%alwaysShowRadius%블록</yellow><gray> 이내의 블록 텍스쳐를 모두 표시합니다
+          <guidearrow> <red>(높음) <gray>%alwaysShowRadius%블록에서 %cullRadius%블록</yellow> 내의 블록 텍스쳐를 공격적으로 컬링합니다
           <guidearrow> <red>(높음) <gray>시야와 블록 텍스쳐 사이의 거리가 <yellow>%maxOccludingCount%블록</yellow> 이상인 경우에만 컬링합니다
     culling-update-interval:
         name: "<white>컬링 업데이트 간격: <yellow>%value%틱"
@@ -366,11 +361,29 @@ guide:
       enabled:
         name: "<white>가이드 도움말: <green>활성화 <dark_gray>(클릭해서 전환)"
         lore: |-
-          <guidearrow> 가이드 내부의 <guideinsn>도움말</guideinsn> 표시 여부
+          <guidearrow> 가이드 내부의 <guidehint>도움말</guidehint> 표시 여부
       disabled:
         name: "<white>가이드 도움말: <red>비활성화 <dark_gray>(클릭해서 전환)"
         lore: |-
-          <guidearrow> 가이드 내부의 <guideinsn>도움말</guideinsn> 표시 여부
+          <guidearrow> 가이드 내부의 <guidehint>도움말</guidehint> 표시 여부
+    toggle-guide-sounds:
+      enabled:
+        name: "<white>가이드 효과음: <green>활성화 <dark_gray>(클릭해서 전환)"
+        lore: |-
+          <guidearrow> 가이드에서 효과음을 재생하려면 활성화하세요
+      disabled:
+        name: "<white>가이드 효과음: <red>비활성화 <dark_gray>(클릭해서 전환)"
+        lore: |-
+          <guidearrow> 가이드에서 효과음을 재생하려면 활성화하세요
+    toggle-story-text:
+      enabled:
+        name: "<white>스토리 텍스트: <green>활성화 <dark_gray>(클릭해서 전환)"
+        lore: |-
+          <guidearrow> 스토리 텍스트</story>를 표시하려면 활성화하세요
+      disabled:
+        name: "<white>스토리 텍스트: <red>비활성화 <dark_gray>(클릭해서 전환)"
+        lore: |-
+          <guidearrow> 스토리 텍스트</story>를 표시하려면 활성화하세요
     info:
       discord:
         name: "<white>디스코드"
